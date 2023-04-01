@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for integration_blueprint."""
+"""DataUpdateCoordinator for hass_nuki_bt."""
 from __future__ import annotations
 
 from datetime import timedelta

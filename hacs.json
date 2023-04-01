@@ -1,6 +1,6 @@
 {
-    "name": "Integration blueprint",
-    "filename": "integration_blueprint.zip",
+    "name": "Nuki BT",
+    "filename": "hass_nuki_bt.zip",
     "hide_default_branch": true,
     "homeassistant": "2022.2.0",
     "render_readme": true,
