@@ -1,12 +1,12 @@
 {
-  "domain": "integration_blueprint",
-  "name": "Integration blueprint",
+  "domain": "hass_nuki_bt",
+  "name": "Nuki BT",
   "codeowners": [
     "@ludeeus"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/ludeeus/integration_blueprint",
+  "documentation": "https://github.com/ludeeus/hass_nuki_bt",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/ludeeus/integration_blueprint/issues",
+  "issue_tracker": "https://github.com/ludeeus/hass_nuki_bt/issues",
   "version": "0.0.0"
 }
