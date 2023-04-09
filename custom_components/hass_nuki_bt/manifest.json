@@ -1,12 +1,26 @@
 {
   "domain": "hass_nuki_bt",
   "name": "Nuki BT",
+  "bluetooth": [
+    {
+      "local_name": "Nuki_*"
+    }
+  ],
   "codeowners": [
-    "@ludeeus"
+    "@ronengr"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/ludeeus/hass_nuki_bt",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/ludeeus/hass_nuki_bt/issues",
-  "version": "0.0.0"
+  "dependencies": [
+    "bluetooth"
+  ],
+  "documentation": "https://github.com/ronengr/hass_nuki_bt",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/ronengr/hass_nuki_bt/issues",
+  "loggers": [
+    "pyNukiBT"
+  ],
+  "requirements": [
+    "pyNukiBT==0.0.2"
+  ],
+  "version": "0.0.1"
 }

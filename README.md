@@ -33,10 +33,11 @@ This integration communicates directly with Nuki over Bluetooth. No need for bri
 ### Configuration:
 * Go to Settings -> Devices & Services
 * The integration should automatically discover you Nuki lock. You Should see a new Discovered Device, just click on "Configure" to configure it.
-  * If no look was discovered you can try to add it manually by clicking on "Add Integration"
+  * If no look was discovered, and you know the Nuki's BT address, you can try to add it manually by clicking on "Add Integration"
 * Select a Device Name and Client Type
-* Enable pairing mode on the NUKI lock (press button for 5 seconds) and select "Pair device automatically"
-  * It is possible to configure the device manually, if you have the key-information, app-ID, auth-ID etc. of an already paired device.
+* Enable pairing mode on the Nuki lock by holding down the button on the Nuki Smart Lock for 5 seconds until the LED ring is permanently glowing.
+* Select "Pair device automatically"
+  * It is possible to configure the device manually, if you have the pairing-information from an already paired device.
     Use this option only if you know what you are doing. This is mostly ment for development.
 
 #### Client Type:
