@@ -1,9 +1,14 @@
 {
-    "name": "ludeeus/hass_nuki_bt",
-    "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.10-bullseye",
+    "name": "hass_nuki_bt",
+    "build": {
+        "dockerfile": "Dockerfile"
+    }
     "postCreateCommand": "scripts/setup",
-    "forwardPorts": [
-        8123
+    // "forwardPorts": [
+    //     8123
+    // ],
+    "appPort": [
+        "8123:8123"
     ],
     "customizations": {
         "vscode": {
@@ -30,7 +35,17 @@
         }
     },
     "remoteUser": "vscode",
+    "capAdd": [
+        "NET_ADMIN"
+    ],
+    "runArgs": [
+        "-v",
+        "/var/run/dbus/:/var/run/dbus/:ro",
+        "--security-opt",
+        "apparmor=unconfined"
+    ],
     "features": {
         "rust": "latest"
     }
 }
+
