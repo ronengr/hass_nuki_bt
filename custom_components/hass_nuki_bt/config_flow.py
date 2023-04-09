@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import (
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    CONF_DEVICE_ID,
+)
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
@@ -13,7 +17,16 @@ from .api import (
     IntegrationBlueprintApiClientCommunicationError,
     IntegrationBlueprintApiClientError,
 )
-from .const import DOMAIN, LOGGER
+from .const import (
+    CONF_APP_ID,
+    CONF_AUTH_ID,
+    CONF_DEVICE_ADDRESS,
+    CONF_DEVICE_PUBLIC_KEY,
+    CONF_PRIVATE_KEY,
+    CONF_PUBLIC_KEY,
+    DOMAIN,
+    LOGGER,
+)
 
 
 class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -52,6 +65,41 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
+                    vol.Required(
+                        CONF_DEVICE_ADDRESS,
+                        description="Device Address",
+                        default=(user_input or {}).get(CONF_DEVICE_ADDRESS),
+                    ): str,
+                    vol.Required(
+                        CONF_DEVICE_ID,
+                        description="Device ID",
+                        default=(user_input or {}).get(CONF_DEVICE_ID),
+                    ): str,
+                    vol.Required(
+                        CONF_AUTH_ID,
+                        description="Auth ID",
+                        default=(user_input or {}).get(CONF_AUTH_ID),
+                    ): str,
+                    vol.Required(
+                        CONF_PRIVATE_KEY,
+                        description="Private key",
+                        default=(user_input or {}).get(CONF_PRIVATE_KEY),
+                    ): str,
+                    vol.Required(
+                        CONF_PUBLIC_KEY,
+                        description="Public key",
+                        default=(user_input or {}).get(CONF_PUBLIC_KEY),
+                    ): str,
+                    vol.Required(
+                        CONF_DEVICE_PUBLIC_KEY,
+                        description="Device public key",
+                        default=(user_input or {}).get(CONF_DEVICE_PUBLIC_KEY),
+                    ): str,
+                    vol.Required(
+                        CONF_APP_ID,
+                        description="Public key",
+                        default=(user_input or {}).get(CONF_APP_ID),
+                    ): str,
                     vol.Required(
                         CONF_USERNAME,
                         default=(user_input or {}).get(CONF_USERNAME),
