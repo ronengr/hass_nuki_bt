@@ -1,50 +1,130 @@
-"""Binary sensor platform for hass_nuki_bt."""
-from __future__ import annotations
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.helpers.entity import EntityCategory
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-    BinarySensorEntityDescription,
-)
+import logging
 
-from .const import DOMAIN
-from .coordinator import BlueprintDataUpdateCoordinator
-from .entity import IntegrationBlueprintEntity
+from .const import DOMAIN, NukiLockConst
+from .entity import NukiEntity
 
-ENTITY_DESCRIPTIONS = (
-    BinarySensorEntityDescription(
-        key="hass_nuki_bt",
-        name="Nuki BT Binary Sensor",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-    ),
-)
+_LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, entry, async_add_devices):
-    """Set up the binary_sensor platform."""
+async def async_setup_entry(hass, entry, async_add_entities):
+    _LOGGER.warning("addindg binary sensors")
+    entities = []
+    # data = entry.as_dict()
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_devices(
-        IntegrationBlueprintBinarySensor(
-            coordinator=coordinator,
-            entity_description=entity_description,
-        )
-        for entity_description in ENTITY_DESCRIPTIONS
-    )
+
+    entities.append(BatteryLow(coordinator))
+    entities.append(BatteryCharging(coordinator))
+    # entities.append(LockState(coordinator))
+    # entities.append(KeypadBatteryLow(coordinator))
+    # entities.append(RingAction(coordinator))
+    entities.append(DoorState(coordinator))
+    async_add_entities(entities)
+    return True
 
 
-class IntegrationBlueprintBinarySensor(IntegrationBlueprintEntity, BinarySensorEntity):
-    """hass_nuki_bt binary_sensor class."""
-
-    def __init__(
-        self,
-        coordinator: BlueprintDataUpdateCoordinator,
-        entity_description: BinarySensorEntityDescription,
-    ) -> None:
-        """Initialize the binary_sensor class."""
+class BatteryLow(NukiEntity, BinarySensorEntity):
+    def __init__(self, coordinator):
         super().__init__(coordinator)
-        self.entity_description = entity_description
+        self._attr_unique_id = f"{coordinator.base_unique_id}-battery_critical"
+        self._attr_name = "Battery Critical"
 
     @property
     def is_on(self) -> bool:
-        """Return true if the binary_sensor is on."""
-        return self.coordinator.data.get("title", "") == "foo"
+        return self._device.is_battery_critical
+
+    @property
+    def device_class(self) -> str:
+        return "battery"
+
+    @property
+    def entity_category(self):
+        return EntityCategory.DIAGNOSTIC
+
+
+class BatteryCharging(NukiEntity, BinarySensorEntity):
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.base_unique_id}-battery_charging"
+        self._attr_name = "Battery Charging"
+        self._attr_device_class = "battery_charging"
+
+    @property
+    def is_on(self) -> bool:
+        return self._device.is_battery_charging
+
+    @property
+    def entity_category(self):
+        return EntityCategory.DIAGNOSTIC
+
+
+# class KeypadBatteryLow(NukiEntity, BinarySensorEntity):
+#     def __init__(self, coordinator):
+#         super().__init__(coordinator)
+#         self.set_id("binary_sensor", "keypad_battery_low")
+#         self.set_name("Keypad Battery Critical")
+
+#     @property
+#     def is_on(self) -> bool:
+#         return self.last_state.get("keypadBatteryCritical", False)
+
+#     @property
+#     def device_class(self) -> str:
+#         return "battery"
+
+#     @property
+#     def entity_category(self):
+#         return EntityCategory.DIAGNOSTIC
+
+
+# class RingAction(NukiEntity, BinarySensorEntity):
+#     def __init__(self, coordinator):
+#         super().__init__(coordinator)
+#         self.set_id("binary_sensor", "ring_action")
+#         self.set_name("Ring Action")
+
+#     @property
+#     def is_on(self) -> bool:
+#         return self.last_state.get("ringactionState", False)
+
+#     @property
+#     def extra_state_attributes(self):
+#         return {"timestamp": self.last_state.get("ringactionTimestamp")}
+
+#     @property
+#     def entity_category(self):
+#         return EntityCategory.DIAGNOSTIC
+
+
+# class LockState(NukiEntity, BinarySensorEntity):
+#     def __init__(self, coordinator):
+#         super().__init__(coordinator)
+#         self.set_id("binary_sensor", "state")
+#         self.set_name("Locked")
+#         self._attr_device_class = "lock"
+
+#     @property
+#     def is_on(self) -> bool:
+#         current = LockStates(self.last_state.get("state", LockStates.UNDEFINED.value))
+#         return current != LockStates.LOCKED
+
+#     @property
+#     def extra_state_attributes(self):
+#         return {"timestamp": self.last_state.get("timestamp")}
+
+
+class DoorState(NukiEntity, BinarySensorEntity):
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.base_unique_id}-door_state"
+        self._attr_name = "Door Open"
+        self._attr_device_class = "door"
+
+    @property
+    def is_on(self) -> bool:
+        current = self._device.last_state.get(
+            "door_sensor_state", NukiLockConst.DoorsensorState.UNKOWN
+        )
+        return current != NukiLockConst.DoorsensorState.DOOR_CLOSED

@@ -3,6 +3,7 @@ default_config:
 
 # https://www.home-assistant.io/integrations/logger/
 logger:
-  default: info
+  default: warning
   logs:
-    custom_components.hass_nuki_bt: debug
+    custom_components.hass_nuki_bt: info
+debugpy:

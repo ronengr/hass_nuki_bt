@@ -5,6 +5,7 @@ import logging
 import hmac
 import time
 from asyncio import CancelledError, TimeoutError
+from typing import Callable
 
 import async_timeout
 
@@ -19,119 +20,7 @@ from bleak.exc import BleakDBusError
 
 from .const import NukiErrorException, NukiLockConst, NukiOpenerConst, NukiConst
 
-logger = logging.getLogger("raspinukibridge")
-
-
-class NukiManager:
-    def __init__(self, name, app_id, adapter="hci0"):
-        self.name = name
-        self.app_id = app_id
-        self.type_id = NukiConst.NukiClientType.BRIDGE
-        self._newstate_callback = None
-
-        self._adapter = adapter
-        self._devices = {}
-        self._scanner = BleakScanner(
-            adapter=self._adapter, detection_callback=self._detected_ibeacon
-        )
-
-    @property
-    def newstate_callback(self):
-        return self._newstate_callback
-
-    @newstate_callback.setter
-    def newstate_callback(self, value):
-        self._newstate_callback = value
-        for device in self._devices.values():
-            asyncio.get_event_loop().create_task(self.newstate_callback(device))
-
-    async def nuki_newstate(self, nuki):
-        if self.newstate_callback:
-            await self.newstate_callback(nuki)
-
-    def get_client(self, address_or_device, timeout=None):
-        return BleakClient(address_or_device, adapter=self._adapter, timeout=timeout)
-
-    def __getitem__(self, index):
-        return list(self._devices.values())[index]
-
-    def nuki_by_id(self, nuki_id):
-        # todo: will fail if no config yet.
-        return next(
-            nuki
-            for nuki in self._devices.values()
-            if nuki.config.get("nuki_id") == nuki_id
-        )
-
-    def add_nuki(self, nuki: "NukiDevice"):
-        nuki.manager = self
-        self._devices[nuki.address] = nuki
-
-    @property
-    def device_list(self):
-        return list(self._devices.values())
-
-    def start(self, loop=None):
-        pass
-
-    async def start_scanning(self):
-        ATTEMPTS = 8
-        logger.info(f"Starting a scan")
-        for i in range(1, ATTEMPTS + 1):
-            try:
-                logger.info(f"Scanning attempt {i}")
-                await self._scanner.start()
-                logger.info(f"Scanning succeeded on attempt {i}")
-                break
-            except BleakDBusError as ex:
-                logger.error(f"Error while start scanning attempt {i}")
-                logger.exception(ex)
-                if i >= ATTEMPTS - 1:
-                    raise ex
-                sleep_seconds = 2
-                logger.info(
-                    f"Scanning failed on attempt {i}. Retrying in {sleep_seconds} seconds"
-                )
-                time.sleep(sleep_seconds)
-
-    async def stop_scanning(self, timeout=10.0):
-        logger.info("Stop scanning")
-        try:
-            await asyncio.wait_for(self._scanner.stop(), timeout=timeout)
-            logger.info("Scanning stopped")
-        except (TimeoutError, CancelledError) as e:
-            logger.error(f"Timeout while stop scanning")
-            logger.exception(e)
-        except AttributeError as e:
-            logger.error("Error while stop scanning. Scan was probably not started.")
-            logger.exception(e)
-        except Exception as e:
-            logger.error("Error while stop scanning")
-            logger.exception(e)
-
-    async def _detected_ibeacon(self, device, advertisement_data):
-        if device.address in self._devices:
-            manufacturer_data = advertisement_data.manufacturer_data.get(76, None)
-            if manufacturer_data is None:
-                logger.info(
-                    f"No manufacturer_data (76) in advertisement_data: {advertisement_data}"
-                )
-                return
-            if manufacturer_data[0] != 0x02:
-                # Ignore HomeKit advertisement
-                return
-            logger.info(
-                f"Nuki: {device.address}, adapter: {self._adapter}, RSSI: {advertisement_data.rssi}"
-            )
-            tx_p = manufacturer_data[-1]
-            nuki = self._devices[device.address]
-            if nuki.just_got_beacon:
-                logger.info(f"Ignoring duplicate beacon from Nuki {device.address}")
-                return
-            nuki.set_ble_device(device, advertisement_data)
-            nuki.rssi = advertisement_data.rssi
-            if not nuki.last_state or tx_p & 0x1:
-                await nuki.update_state()
+logger = logging.getLogger(__name__)
 
 
 class NukiDevice:
@@ -145,6 +34,7 @@ class NukiDevice:
         ble_device,
         app_id=None,
         model=None,
+        name="RaspiNukiBridge",
     ):
         self.address = address
         self.auth_id = auth_id
@@ -152,21 +42,21 @@ class NukiDevice:
         self.bridge_public_key = bridge_public_key
         self.bridge_private_key = bridge_private_key
         self.app_id = app_id
-        self.manager = None
         self.id = None
         self.name = None
         self.username = None
         self.rssi = None
         self.last_state = None
         self.config = {}
+        self._poll_needed = False
+        self.last_action_status = None
 
-        self.name = "RaspiNukiBridge"
+        self.name = name
         self._device_type = None
         self._pairing_handle = None
         self._client = None
         self._expected_response: NukiConst.NukiCommand = None
         self._pairing_callback = None
-        self._reset_opener_state_task = None
         self.retry = 5
         self.connection_timeout = 30
         self.command_timeout = 30
@@ -176,7 +66,9 @@ class NukiDevice:
         self._connect_lock = asyncio.Lock()
         self._operation_lock = asyncio.Lock()
         self._update_state_lock = asyncio.Lock()
-        self._get_config_lock = asyncio.Lock()
+        self._update_config_lock = asyncio.Lock()
+
+        self._callbacks = []
 
         if nuki_public_key and bridge_private_key:
             self._create_shared_key()
@@ -187,7 +79,7 @@ class NukiDevice:
 
         self.set_ble_device(ble_device)
 
-    async def parse_advertisement_data(self, device, advertisement_data):
+    def parse_advertisement_data(self, device, advertisement_data):
         if device.address == self.address:
             manufacturer_data = advertisement_data.manufacturer_data.get(76, None)
             if manufacturer_data is None:
@@ -198,9 +90,7 @@ class NukiDevice:
             if manufacturer_data[0] != 0x02:
                 # Ignore HomeKit advertisement
                 return
-            logger.info(
-                f"Nuki: {device.address}, adapter: {self._adapter}, RSSI: {advertisement_data.rssi}"
-            )
+            logger.info(f"Nuki: {device.address}, RSSI: {advertisement_data.rssi}")
             tx_p = manufacturer_data[-1]
             if self.just_got_beacon:
                 logger.info(f"Ignoring duplicate beacon from Nuki {device.address}")
@@ -208,7 +98,11 @@ class NukiDevice:
             self.set_ble_device(device)
             self.rssi = advertisement_data.rssi
             if not self.last_state or tx_p & 0x1:
-                await self.update_state()
+                self._poll_needed = True
+            return
+
+    def poll_needed(self, seconds_since_last_poll):
+        return self._poll_needed
 
     @property
     def just_got_beacon(self):
@@ -255,6 +149,12 @@ class NukiDevice:
     def keyturner_state(self):
         return self.last_state
 
+    def get_keyturner_state(self):
+        return self.last_state
+
+    def get_config(self):
+        return self.config
+
     @staticmethod
     def _prepare_command(cmd: NukiConst.NukiCommand, payload=bytes()):
         message = NukiConst.NukiCommand.build(cmd) + payload
@@ -280,13 +180,21 @@ class NukiDevice:
     def _parse_message(self, data):
         return self._const.NukiMessage.parse(data)
 
-    async def reset_opener_state(self):
-        await asyncio.sleep(30)
-        self.last_state[
-            "last_lock_action_completion_status"
-        ] = self._const.LockActionCompletionStatus.SUCCESS
-        if self.config and self.last_state:
-            await self.manager.nuki_newstate(self)
+    def _fire_callbacks(self) -> None:
+        """Fire callbacks."""
+        logger.debug("%s: Fire callbacks", self.name)
+        for callback in self._callbacks:
+            callback()
+
+    def subscribe(self, callback: Callable[[], None]) -> Callable[[], None]:
+        """Subscribe to device notifications."""
+        self._callbacks.append(callback)
+
+        def _unsub() -> None:
+            """Unsubscribe from device notifications."""
+            self._callbacks.remove(callback)
+
+        return _unsub
 
     def set_ble_device(self, ble_device, advertisement_data=None):
         if not self._client:
@@ -348,6 +256,10 @@ class NukiDevice:
             else:
                 raise ex
 
+        elif msg.command == self._const.NukiCommand.STATUS:
+            logger.info(f"Last action: {msg.payload.status}")
+            self.last_action_status = msg.payload.status
+
         if self._notify_future and not self._notify_future.done():
             if msg.command == self._expected_response:
                 self._notify_future.set_result(msg)
@@ -358,22 +270,10 @@ class NukiDevice:
                 self.last_state["config_update_count"]
                 != msg.payload["config_update_count"]
             )
-            self.last_state = msg.payload
-            logger.info(f"State: {self.last_state}")
-            # if self.config and self.last_state:
-            #    await self.manager.nuki_newstate(self)
-            if (
-                self.device_type == self._const.NukiDeviceType.OPENER
-                and self.last_state["last_lock_action_completion_status"]
-            ):
-                self._reset_opener_state_task = asyncio.create_task(
-                    self.reset_opener_state()
-                )
-
-        elif msg.command == self._const.NukiCommand.STATUS:
-            logger.info(f"Last action: {msg.payload.status}")
-
-        else:
+            if update_config:
+                # todo: update config directly?
+                self.poll_needed = True
+        elif msg.command != self._const.NukiCommand.STATUS:
             logger.error("%s: Received unsolicited notification: %s", self.name, msg)
             logger.error("was expecting %s", self._expected_response)
 
@@ -487,31 +387,24 @@ class NukiDevice:
                 != msg.payload["config_update_count"]
             )
             self.last_state = msg.payload
-            logger.info(f"State: {self.last_state}")
-            # if self.config and self.last_state:
-            #     await self.manager.nuki_newstate(self)
-            if (
-                self.device_type == self._const.NukiDeviceType.OPENER
-                and self.last_state["last_lock_action_completion_status"]
-            ):
-                self._reset_opener_state_task = asyncio.create_task(
-                    self.reset_opener_state()
-                )
+            logger.debug(f"State: {self.last_state}")
+            self._poll_needed = False
         if update_config:
-            await self.get_config()
+            await self.update_config()
+        self._fire_callbacks()
 
     async def lock(self):
-        await self.lock_action(
+        return await self.lock_action(
             self._const.LockAction.LOCK, self._const.LockState.LOCKING
         )
 
     async def unlock(self):
-        await self.lock_action(
+        return await self.lock_action(
             self._const.LockAction.UNLOCK, self._const.LockState.UNLOCKING
         )
 
     async def unlatch(self):
-        await self.lock_action(
+        return await self.lock_action(
             self._const.LockAction.UNLATCH, self._const.LockState.UNLATCHING
         )
 
@@ -530,7 +423,7 @@ class NukiDevice:
             payload = self._const.NukiLockActionMsg.build(
                 {
                     "lock_action": action,
-                    "app_id": self.manager.app_id,
+                    "app_id": self.app_id,
                     "flags": 0,
                     "name_suffix": self.username,
                     "nonce": msg.payload.nonce,
@@ -541,13 +434,14 @@ class NukiDevice:
                 self._const.BLE_CHAR, cmd, self._const.NukiCommand.STATUS
             )
             logger.info(f"{msg.payload.status}")
+        return msg.payload
 
-    async def get_config(self):
+    async def update_config(self):
         logger.info("Retrieve nuki configuration")
-        if self._get_config_lock.locked():
+        if self._update_config_lock.locked():
             logger.info("get config already in progress")
             return
-        async with self._operation_lock, self._get_config_lock:
+        async with self._operation_lock, self._update_config_lock:
             payload = self._const.NukiCommand.build(self._const.NukiCommand.CHALLENGE)
             cmd = self._encrypt_command(self._const.NukiCommand.REQUEST_DATA, payload)
             msg = await self._send_command(
@@ -560,9 +454,7 @@ class NukiDevice:
                 self._const.BLE_CHAR, cmd, self._const.NukiCommand.CONFIG
             )
             self.config = msg.payload
-            logger.info(f"Config: {self.config}")
-            # if self.config and self.last_state:
-            #     await self.manager.nuki_newstate(self)
+            logger.debug(f"Config: {self.config}")
 
     async def pair(self, callback):
         async with self._operation_lock:
@@ -593,9 +485,12 @@ class NukiDevice:
             msg = await self._send_command(
                 self._const.BLE_PAIRING_CHAR, cmd, self._const.NukiCommand.CHALLENGE
             )
-            app_id = self.manager.app_id.to_bytes(4, "little")
-            type_id = self._const.NukiClientType.build(self.manager.type_id)
-            name = self.manager.name.encode("utf-8").ljust(32, b"\0")
+            app_id = self.app_id.to_bytes(4, "little")
+            # todo: use type variable
+            type_id = self._const.NukiClientType.build(
+                self._const.NukiClientType.BRIDGE
+            )
+            name = self.name.encode("utf-8").ljust(32, b"\0")
             nonce = nacl.utils.random(32)
             value_r = type_id + app_id + name + nonce + msg.payload["nonce"]
             payload = hmac.new(
@@ -676,5 +571,5 @@ class NukiDevice:
             msg = await self._send_command(
                 self._const.BLE_CHAR, cmd, self._const.NukiCommand.LOG_ENTRY
             )
-            logger.info(msg.payload)
+            logger.debug(msg.payload)
         return msg.payload

@@ -7,14 +7,14 @@ from __future__ import annotations
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.components import bluetooth
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .nuki import NukiDevice
-from .api import IntegrationBlueprintApiClient
+
 from .const import (
     CONF_APP_ID,
     CONF_AUTH_ID,
@@ -25,13 +25,12 @@ from .const import (
     DOMAIN,
     NukiConst,
 )
-from .coordinator import BlueprintDataUpdateCoordinator, NukiDataUpdateCoordinator
+from .coordinator import NukiDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
     Platform.BINARY_SENSOR,
-    Platform.SWITCH,
     Platform.LOCK,
+    Platform.SENSOR,
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         nuki_public_key=bytes.fromhex(entry.data[CONF_DEVICE_PUBLIC_KEY]),
         bridge_public_key=bytes.fromhex(entry.data[CONF_PUBLIC_KEY]),
         bridge_private_key=bytes.fromhex(entry.data[CONF_PRIVATE_KEY]),
-        app_id=2324564706,  # entry.data[CONF_APP_ID],
+        app_id=int(entry.data[CONF_APP_ID]),
         ble_device=ble_device,
         model=NukiConst.NukiDeviceType.SMARTLOCK_1_2,  # lock or opener
     )
@@ -66,11 +65,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ble_device=ble_device,
         device=device,
         base_unique_id=entry.unique_id,
-        model=NukiConst.NukiDeviceType.SMARTLOCK_1_2,
+        device_name=entry.data.get(CONF_NAME, entry.title),
         connectable=True,
+        model=NukiConst.NukiDeviceType.SMARTLOCK_1_2,
     )
 
-    await device.update_state()
     entry.async_on_unload(coordinator.async_start())
     if not await coordinator.async_wait_ready():
         raise ConfigEntryNotReady(f"{address} is not advertising state")

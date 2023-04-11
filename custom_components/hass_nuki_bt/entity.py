@@ -1,25 +1,72 @@
-"""BlueprintEntity class."""
+"""NukiEntity class."""
 from __future__ import annotations
 
+from collections.abc import Mapping
+import logging
+from typing import Any
+
+from homeassistant.components.bluetooth.passive_update_coordinator import (
+    PassiveBluetoothCoordinatorEntity,
+)
+from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION, DOMAIN, NAME, VERSION
-from .coordinator import BlueprintDataUpdateCoordinator
+from .const import MANUFACTURER
+from .coordinator import NukiDataUpdateCoordinator
+from .nuki import NukiDevice
+
+_LOGGER = logging.getLogger(__name__)
 
 
-class IntegrationBlueprintEntity(CoordinatorEntity):
-    """BlueprintEntity class."""
+class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
+    """Generic entity encapsulating common features of Switchbot device."""
 
-    _attr_attribution = ATTRIBUTION
+    _device: NukiDevice
+    _attr_has_entity_name = True
 
-    def __init__(self, coordinator: BlueprintDataUpdateCoordinator) -> None:
-        """Initialize."""
+    def __init__(self, coordinator: NukiDataUpdateCoordinator) -> None:
+        """Initialize the entity."""
         super().__init__(coordinator)
-        self._attr_unique_id = coordinator.config_entry.entry_id
+        self._device = coordinator.device
+        self._last_run_success: bool | None = None
+        self._address = coordinator.ble_device.address
+        self._attr_unique_id = coordinator.base_unique_id
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.unique_id)},
-            name=NAME,
-            model=VERSION,
-            manufacturer=NAME,
+            connections={(dr.CONNECTION_BLUETOOTH, self._address)},
+            manufacturer=MANUFACTURER,
+            model=coordinator.model,  # Sometimes the modelName is missing from the advertisement data
+            name=coordinator.device_name,
         )
+
+    @property
+    def parsed_data(self) -> dict[str, Any]:
+        """Return parsed device data for this entity."""
+        return self.coordinator.device.keyturner_state
+
+    @property
+    def extra_state_attributes(self) -> Mapping[Any, Any]:
+        """Return the state attributes."""
+        return {"last_run_success": self._last_run_success}
+
+    @callback
+    def _async_update_attrs(self) -> None:
+        """Update the entity attributes."""
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle data update."""
+        self._async_update_attrs()
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Register callbacks."""
+        self.async_on_remove(self._device.subscribe(self._handle_coordinator_update))
+        return await super().async_added_to_hass()
+
+    async def async_update(self) -> None:
+        """Update the entity.
+
+        Only used by the generic entity update service.
+        """
+        await self._device.update_state()
