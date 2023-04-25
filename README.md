@@ -1,47 +1,65 @@
-# Notice
+# Nuki BT
 
-The component and platforms in this repository are not meant to be used by a
-user, but as a "blueprint" that custom component developers can build
-upon, to make more awesome stuff.
+[![GitHub Release][releases-shield]][releases]
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]](LICENSE)
 
-HAVE FUN! 😎
+[![hacs][hacsbadge]][hacs]
+![Project Maintenance][maintenance-shield]
 
-## Why?
+[![Community Forum][forum-shield]][forum]
 
-This is simple, by having custom_components look (README + structure) the same
-it is easier for developers to help each other and for users to start using them.
+Nuki lock integration for Home Asistance.
+This integration communicates directly with Nuki over Bluetooth. No need for bridge.
 
-If you are a developer and you want to add things to this "blueprint" that you think more
-developers will have use for, please open a PR to add it :)
 
-## What?
+## Background
+- This is based on [RaspiNukiBridge](https://github.com/regevbr/RaspiNukiBridge) by [dauden1184](https://github.com/dauden1184/) and [regevbr](https://github.com/regevbr)
+- This is heavily inspired by [kvj](https://github.com/kvj)'s [hass_nuki_ng](https://github.com/kvj/hass_nuki_ng) and [technyon](https://github.com/technyon)'s [nuki_hub](https://github.com/technyon/nuki_hub)
 
-This repository contains multiple files, here is a overview:
+## Setup
 
-File | Purpose | Documentation
--- | -- | --
-`.devcontainer.json` | Used for development/testing with Visual Studio Code. | [Documentation](https://code.visualstudio.com/docs/remote/containers)
-`.github/ISSUE_TEMPLATE/*.yml` | Templates for the issue tracker | [Documentation](https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository)
-`.vscode/tasks.json` | Tasks for the devcontainer. | [Documentation](https://code.visualstudio.com/docs/editor/tasks)
-`custom_components/hass_nuki_bt/*` | Integration files, this is where everything happens. | [Documentation](https://developers.home-assistant.io/docs/creating_component_index)
-`CONTRIBUTING.md` | Guidelines on how to contribute. | [Documentation](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
-`LICENSE` | The license file for the project. | [Documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository)
-`README.md` | The file you are reading now, should contain info about the integration, installation and configuration instructions. | [Documentation](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax)
-`requirements.txt` | Python packages used for development/lint/testing this integration. | [Documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+{% if not installed %}
 
-## How?
+### Installation:
+* Go to HACS -> Integrations
+* Click the three dots on the top right and select `Custom Repositories`
+* Enter `https://github.com/ronengr/hass_nuki_bt` as repository, select the category `Integration` and click Add
+* A new custom integration shows up for installation (Nuki BT) - install it
+* Restart Home Assistant
 
-1. Create a new repository in GitHub, using this repository as a template by clicking the "Use this template" button in the GitHub UI.
-1. Open your new repository in Visual Studio Code devcontainer (Preferably with the "`Dev Containers: Clone Repository in Named Container Volume...`" option).
-1. Rename all instances of the `hass_nuki_bt` to `custom_components/<your_integration_domain>` (e.g. `custom_components/awesome_integration`).
-1. Rename all instances of the `Nuki BT` to `<Your Integration Name>` (e.g. `Awesome Integration`).
-1. Run the `scrtipts/develop` to start HA and test out your new integration.
+{% endif %}
 
-## Next steps
+### Configuration:
+* Go to Settings -> Devices & Services
+* The integration should automatically discover you Nuki lock. You Should see a new Discovered Device, just click on "Configure" to configure it.
+  * If no look was discovered you can try to add it manually by clicking on "Add Integration"
+* Select a Device Name and Client Type
+* Enable pairing mode on the NUKI lock (press button for 5 seconds) and select "Pair device automatically"
+  * It is possible to configure the device manually, if you have the key-information, app-ID, auth-ID etc. of an already paired device.
+    Use this option only if you know what you are doing. This is mostly ment for development.
 
-These are some next steps you may want to look into:
-- Add tests to your integration, [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component) can help you get started.
-- Add brand images (logo/icon) to https://github.com/home-assistant/brands.
-- Create your first release.
-- Share your integration on the [Home Assistant Forum](https://community.home-assistant.io/).
-- Submit your integration to the [HACS](https://hacs.xyz/docs/publish/start).
+#### Client Type:
+hass_nuki_bt can connect to the Nuki lock in 2 ways:
+  * "Bridge" is the recommended way. This will cause the current Bridge to be unregistered when pairing.
+  * "App" will allow you to run hass_nuki_bt alongside a Nuki Bridge, but can lead to either device missing updates.
+
+
+## Contributions are welcome!
+
+If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+
+***
+
+[hass_nuki_bt]: https://github.com/ronengr/hass_nuki_bt
+[commits-shield]: https://img.shields.io/github/commit-activity/y/ronengr/hass_nuki_bt.svg?style=for-the-badge
+[commits]: https://github.com/ronengr/hass_nuki_bt/commits/main
+[hacs]: https://github.com/hacs/integration
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[exampleimg]: example.png
+[forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
+[forum]: https://community.home-assistant.io/
+[license-shield]: https://img.shields.io/github/license/ronengr/hass_nuki_bt.svg?style=for-the-badge
+[maintenance-shield]: https://img.shields.io/badge/maintainer-%20%40ronengr-blue.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/ronengr/hass_nuki_bt.svg?style=for-the-badge
+[releases]: https://github.com/ronengr/hass_nuki_bt/releases
