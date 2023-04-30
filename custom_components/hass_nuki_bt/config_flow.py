@@ -185,8 +185,8 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             and CONF_DEVICE_PUBLIC_KEY in self._data
         ):
             return self.async_create_entry(
-                title=user_input[CONF_NAME],
-                data=user_input,
+                title=self._data[CONF_NAME],
+                data=self._data,
             )
         return self.async_show_form(
             step_id="manual",
