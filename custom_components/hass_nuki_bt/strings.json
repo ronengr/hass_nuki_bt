@@ -9,6 +9,7 @@
                 "data": {
                     "name": "Device Name",
                     "device_address": "Device Address",
+                    "pin": "Security PIN (Optional)",
                     "client_type": "Client Type"
                 }
             },

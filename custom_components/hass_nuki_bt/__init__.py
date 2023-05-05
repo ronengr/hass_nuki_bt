@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform, CONF_NAME
+from homeassistant.const import Platform, CONF_NAME, CONF_PIN
 from homeassistant.core import HomeAssistant
 from homeassistant.components import bluetooth
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -72,6 +72,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         base_unique_id=entry.unique_id,
         device_name=entry.data.get(CONF_NAME),
         connectable=True,
+        security_pin=int(entry.data.get(CONF_PIN, 0)),
     )
 
     entry.async_on_unload(coordinator.async_start())

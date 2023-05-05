@@ -22,13 +22,13 @@ _LOGGER = logging.getLogger(__name__)
 class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
     """Generic entity encapsulating common features of Nuki device."""
 
-    _device: NukiDevice
+    device: NukiDevice
     _attr_has_entity_name = True
 
     def __init__(self, coordinator: NukiDataUpdateCoordinator) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
-        self._device = coordinator.device
+        self.device = coordinator.device
         self._last_run_success: bool | None = None
         self._address = coordinator.ble_device.address
         self._attr_unique_id = coordinator.base_unique_id
@@ -50,24 +50,26 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
         """Return the state attributes."""
         return {"last_run_success": self._last_run_success}
 
-    # @callback
-    # def _async_update_attrs(self) -> None:
-    #     """Update the entity attributes."""
+    @callback
+    def _async_update_attrs(self) -> None:
+        """Update the entity attributes."""
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle data update."""
-        # self._async_update_attrs()
+        self._async_update_attrs()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""
-        self.async_on_remove(self._device.subscribe(self._handle_coordinator_update))
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self._handle_coordinator_update)
+        )
         return await super().async_added_to_hass()
 
-    async def async_update(self) -> None:
-        """Update the entity.
+    # async def async_update(self) -> None:
+    #     """Update the entity.
 
-        Only used by the generic entity update service.
-        """
-        await self._device.update_state()
+    #     Only used by the generic entity update service.
+    #     """
+    #     await self._device.update_state()
