@@ -40,7 +40,7 @@ class NukiLock(NukiEntity, LockEntity):
 
     def _async_update_attrs(self) -> None:
         """Update the entity attributes."""
-        status = self._device.keyturner_state.lock_state
+        status = self.device.keyturner_state.lock_state
         self._attr_is_locked = status is NukiLockConst.LockState.LOCKED
         self._attr_is_locking = status is NukiLockConst.LockState.LOCKING
         self._attr_is_unlocking = status is NukiLockConst.LockState.UNLOCKING
@@ -50,7 +50,7 @@ class NukiLock(NukiEntity, LockEntity):
         """Do door action."""
         try:
             user = await self.hass.auth.async_get_user(self._context.user_id)
-            msg = await self._device.lock_action(action, name_suffix=user.name)
+            msg = await self.device.lock_action(action, name_suffix=user.name)
         except NukiErrorException as ex:
             self._last_run_success = False
             self._last_result = ex.error_code

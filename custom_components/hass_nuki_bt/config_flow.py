@@ -8,7 +8,7 @@ from nacl.public import PrivateKey
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, CONF_PIN
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     SelectSelector,
@@ -97,6 +97,9 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(
                         CONF_DEVICE_ADDRESS,
                         default=self._data.get(CONF_DEVICE_ADDRESS),
+                    ): str,
+                    vol.Optional(
+                        CONF_PIN,
                     ): str,
                     vol.Required(CONF_CLIENT_TYPE, default="Bridge"): SelectSelector(
                         SelectSelectorConfig(

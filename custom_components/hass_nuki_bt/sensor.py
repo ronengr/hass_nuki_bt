@@ -29,9 +29,7 @@ PARALLEL_UPDATES = 0
 class NukiSensorEntityDescription(SensorEntityDescription):
     """A class that describes nuki sensor entities."""
 
-    info_function: Callable | None = lambda device, sensor: device.keyturner_state[
-        sensor
-    ]
+    info_function: Callable | None = lambda slf: slf.device.keyturner_state[slf.sensor]
 
 
 SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
@@ -41,7 +39,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         icon="mdi:lock",
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda device, sensor: device.config[sensor],
+        info_function=lambda slf: slf.device.config[slf.sensor],
     ),
     "rssi": NukiSensorEntityDescription(
         key="rssi",
@@ -50,7 +48,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda device, sensor: device.rssi,
+        info_function=lambda slf: slf.device.rssi,
     ),
     "battery": NukiSensorEntityDescription(
         key="battery",
@@ -59,7 +57,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda device, sensor: device.battery_percentage,
+        info_function=lambda slf: slf.device.battery_percentage,
     ),
     "lock_state": NukiSensorEntityDescription(
         key="lock_state",
@@ -99,6 +97,14 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    "last_action_user": NukiSensorEntityDescription(
+        key="last_action_user",
+        name="Last action user name",
+        icon="mdi:lock",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        info_function=lambda slf: slf.coordinator.last_nuki_log_entry.get("name"),
+    ),
 }
 
 
@@ -117,12 +123,12 @@ class NukiSensor(NukiEntity, SensorEntity):
     def __init__(self, coordinator: NukiDataUpdateCoordinator, sensor: str) -> None:
         """Initialize the Niki sensor."""
         super().__init__(coordinator)
-        self._sensor = sensor
+        self.sensor = sensor
         self._attr_unique_id = f"{coordinator.base_unique_id}-{sensor}"
         self.entity_description = SENSOR_TYPES[sensor]
         self._info_function = self.entity_description.info_function
+        self._async_update_attrs()
 
-    @property
-    def native_value(self) -> str | int | None:
-        """Return the state of the sensor."""
-        return self._info_function(self._device, self._sensor)
+    def _async_update_attrs(self) -> None:
+        """Update the entity attributes."""
+        self._attr_native_value = self._info_function(self)

@@ -22,7 +22,7 @@ class NukiBinarySensorEntityDescription(BinarySensorEntityDescription):
     """A class that describes nuki sensor entities."""
 
     info_function: Callable | None = (
-        lambda device, sensor: device.keyturner_state[sensor] != 0
+        lambda slf: slf.device.keyturner_state[slf.sensor] != 0
     )
 
 
@@ -32,29 +32,21 @@ SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = {
         name="Battery Critical",
         device_class=BinarySensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda device, sensor: device.is_battery_critical,
+        info_function=lambda slf: slf.device.is_battery_critical,
     ),
     "battery_charging": NukiBinarySensorEntityDescription(
         key="battery_charging",
         name="Battery Charging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda device, sensor: device.is_battery_critical,
+        info_function=lambda slf: slf.device.is_battery_critical,
     ),
-    # "door_sensor_state": NukiBinarySensorEntityDescription(
-    #     key="door_sensor_state",
-    #     name="Door Open",
-    #     device_class=BinarySensorDeviceClass.DOOR,
-    #     # entity_category=EntityCategory.DIAGNOSTIC,
-    #     info_function=lambda device, sensor: device.keyturner_state[sensor]
-    #     != NukiLockConst.DoorsensorState.DOOR_CLOSED,
-    # ),
     "accessory_battery_state": NukiBinarySensorEntityDescription(
         key="accessory_battery_state",
         name="Keypad Battery Critical",
         device_class=BinarySensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda device, sensor: device.keyturner_state[sensor] & 0x2,
+        info_function=lambda slf: slf.device.keyturner_state[slf.sensor] & 0x2,
     ),
     "nightmode_active": NukiBinarySensorEntityDescription(
         key="nightmode_active",
@@ -68,9 +60,6 @@ SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = {
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Nuki sensor based on a config entry."""
-    _LOGGER.warning("addindg binary sensors")
-    # entities = []
-    # data = entry.as_dict()
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = [NukiBinarySensor(coordinator, sensor) for sensor in SENSOR_TYPES]
@@ -84,12 +73,12 @@ class NukiBinarySensor(NukiEntity, BinarySensorEntity):
     def __init__(self, coordinator: NukiDataUpdateCoordinator, sensor: str) -> None:
         """Initialize the Niki sensor."""
         super().__init__(coordinator)
-        self._sensor = sensor
+        self.sensor = sensor
         self._attr_unique_id = f"{coordinator.base_unique_id}-{sensor}"
         self.entity_description = SENSOR_TYPES[sensor]
         self._info_function = self.entity_description.info_function
+        self._async_update_attrs()
 
-    @property
-    def is_on(self) -> bool | None:
-        """Return the state of the sensor."""
-        return self._info_function(self._device, self._sensor)
+    def _async_update_attrs(self) -> None:
+        """Update the entity attributes."""
+        self._attr_is_on = self._info_function(self)

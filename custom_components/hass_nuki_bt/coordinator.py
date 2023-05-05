@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import async_timeout
 
@@ -12,10 +12,11 @@ from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.active_update_coordinator import (
     ActiveBluetoothDataUpdateCoordinator,
 )
-from homeassistant.core import CoreState, HomeAssistant, callback
-from pyNukiBT import NukiDevice
+from homeassistant.core import HomeAssistant, callback, CALLBACK_TYPE
+from pyNukiBT import NukiDevice, NukiConst
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         base_unique_id: str,
         device_name: str,
         connectable: bool,
+        security_pin: int = None,
     ) -> None:
         """Initialize global nuki data updater."""
         super().__init__(
@@ -51,8 +53,45 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         self.device_name = device_name
         self.base_unique_id = base_unique_id
         self.model = None
-        _LOGGER = logger
-        # self._was_unavailable = True
+        self.last_nuki_log_entry = {}
+        self._security_pin = security_pin
+        self._nuki_listeners: dict[
+            CALLBACK_TYPE, tuple[CALLBACK_TYPE, object | None]
+        ] = {}
+        self._unsubscribe_nuki_callbacks = None
+
+    @callback
+    def _async_start(self) -> None:
+        self._unsubscribe_nuki_callbacks = self.device.subscribe(
+            self.async_update_nuki_listeners
+        )
+        return super()._async_start()
+
+    @callable
+    def _async_stop(self) -> None:
+        if self._unsubscribe_nuki_callbacks is not None:
+            self._unsubscribe_nuki_callbacks()
+        return super()._async_stop()
+
+    @callback
+    def async_add_listener(
+        self, update_callback: CALLBACK_TYPE, context: Any = None
+    ) -> Callable[[], None]:
+        """Listen for data updates."""
+
+        @callback
+        def remove_listener() -> None:
+            """Remove update listener."""
+            self._nuki_listeners.pop(remove_listener)
+
+        self._nuki_listeners[remove_listener] = (update_callback, context)
+        return remove_listener
+
+    @callback
+    def async_update_nuki_listeners(self) -> None:
+        """Update all registered listeners."""
+        for update_callback, _ in list(self._nuki_listeners.values()):
+            update_callback()
 
     @callback
     def _needs_poll(
@@ -60,32 +99,34 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         service_info: bluetooth.BluetoothServiceInfoBleak,
         seconds_since_last_poll: float | None,
     ) -> bool:
-        # Only poll if hass is running, we need to poll,
-        # and we actually have a way to connect to the device
-        return (
-            self.hass.state == CoreState.running
-            and self.device.poll_needed(seconds_since_last_poll)
-            and bool(
-                bluetooth.async_ble_device_from_address(
-                    self.hass, service_info.device.address, connectable=True
-                )
-            )
-        )
+        return self.device.poll_needed(seconds_since_last_poll)
 
     async def _async_update(
-        self, service_info: bluetooth.BluetoothServiceInfoBleak
+        self, service_info: bluetooth.BluetoothServiceInfoBleak = None
     ) -> None:
         """Poll the device."""
         await self.device.update_state()
-        # await self.device.get_last_log_entry()
+        if self._security_pin:
+            # get the latest log enrty
+            logs = await self.device.request_log_entries(
+                security_pin=self._security_pin, count=1
+            )
+            if logs[0].type == NukiConst.LogEntryType.LOCK_ACTION:
+                # todo: handle other log types
+                self.last_nuki_log_entry = logs[0]
+            elif logs[0].index > self.last_nuki_log_entry.index:
+                # if there are new log entries, get max 10 entries
+                logs = await self.device.request_log_entries(
+                    security_pin=self._security_pin,
+                    count=min(10, logs[0].index - self.last_nuki_log_entry.index),
+                    start_index=logs[0].index,
+                )
+                for log in logs:
+                    if log.type == NukiConst.LogEntryType.LOCK_ACTION:
+                        self.last_nuki_log_entry = log
+                        break
 
-    # @callback
-    # def _async_handle_unavailable(
-    #     self, service_info: bluetooth.BluetoothServiceInfoBleak
-    # ) -> None:
-    #     """Handle the device going unavailable."""
-    #     super()._async_handle_unavailable(service_info)
-    #     self._was_unavailable = True
+        self.async_update_nuki_listeners()
 
     @callback
     def _async_handle_bluetooth_event(
@@ -98,15 +139,12 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         self.device.parse_advertisement_data(
             service_info.device, service_info.advertisement
         )
-        # if not self.device.advertisement_changed(adv) and not self._was_unavailable:
-        #     return
-        # self._was_unavailable = False
         super()._async_handle_bluetooth_event(service_info, change)
 
     async def async_wait_ready(self) -> bool:
         """Wait for the device to be ready."""
         with contextlib.suppress(asyncio.TimeoutError):
             async with async_timeout.timeout(DEVICE_STARTUP_TIMEOUT):
-                await self.device.update_state()
+                await self._async_update()
                 return True
         return False
