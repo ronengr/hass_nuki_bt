@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-DEVICE_STARTUP_TIMEOUT = 30
+DEVICE_STARTUP_TIMEOUT = 300
 
 
 class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
