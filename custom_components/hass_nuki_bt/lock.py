@@ -50,7 +50,8 @@ class NukiLock(NukiEntity, LockEntity):
         """Do door action."""
         try:
             user = await self.hass.auth.async_get_user(self._context.user_id)
-            msg = await self.device.lock_action(action, name_suffix=user.name)
+            user_name = user.name if user else None
+            msg = await self.device.lock_action(action, name_suffix=user_name)
         except NukiErrorException as ex:
             self._last_run_success = False
             self._last_result = ex.error_code
