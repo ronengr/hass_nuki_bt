@@ -1,0 +1,43 @@
+{
+    "title": "Nuki Türöffner",
+    "config": {
+        "flow_title": "{name} ({address})",
+        "step": {
+            "step1": {
+                "title": "Neues Nuki-Gerät",
+                "description": "Bitte auswählen",
+                "data": {
+                    "name": "Gerätename",
+                    "device_address": "Geräteadresse",
+                    "pin": "Sicherheits-PIN (Optional)",
+                    "client_type": "Client-Typ"
+                }
+            },
+            "manual": {
+                "title": "Neues Nuki-Gerät (manuell)",
+                "description": "Informationen manuell eingeben",
+                "data": {
+                    "device_id": "Geräte-ID",
+                    "auth_id": "Authentifizierungs-ID",
+                    "private_key": "Privater Schlüssel",
+                    "public_key": "Öffentlicher Schlüssel",
+                    "device_public_key": "Öffentlicher Schlüssel des Geräts",
+                    "app_id": "App-ID"
+                }
+            },
+            "choose_method": {
+                "description": "Wähle eine Methode zur Konfiguration von {name} ({address}).\nEs wird empfohlen, das Gerät automatisch zu koppeln.\nWähle die manuelle Option nur aus, wenn du weißt, was du tust.\n\nSetze das Nuki vor dem klick auf \"Koppeln\" in den Kopplungsmodus, indem die Taste an deinem Nuki 5 Sekunden lang drückst, bis das Licht dauerhaft leuchtet.",
+                "menu_options": {
+                    "pair": "Gerät automatisch koppeln (empfohlen)",
+                    "manual": "Bereits gepaarte Informationen manuell eingeben"
+                }
+            }
+        },
+        "error": {
+            "auth": "Benutzername/Passwort ist falsch.",
+            "connection": "Verbindung zum Server konnte nicht hergestellt werden.",
+            "unknown": "Unbekannter Fehler ist aufgetreten.",
+            "pairing": "Nuki befindet sich nicht im Kopplungsmodus.\nVersetze das Nuki in den Kopplungsmodus, indem du die Taste 5 Sekunden lang drückst, und versuche es dann erneut."
+        }
+    }
+}
