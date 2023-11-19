@@ -26,7 +26,7 @@
                 }
             },
             "choose_method": {
-                "description": "Choose a method to configure {name} ({address}).\nIt is recomended to pair the device automatically.\nSelect the manual option only if you know what you are doing\n\nBefore clicking on \"Pair\" put your Nuki in pairing mode by pressing the button on your Nuki for 7 seconds until the light is parmanently glowing.",
+                "description": "Choose a method to configure {name} ({address}).\nIt is recomended to pair the device automatically.\nSelect the manual option only if you know what you are doing\n\nBefore clicking on \"Pair\" put your Nuki in pairing mode by pressing the button on your Nuki for 5 seconds until the light is parmanently glowing.",
                 "menu_options": {
                     "pair": "Pair device automatically (recomended)",
                     "manual": "Enter already-paird information manually"
@@ -37,7 +37,7 @@
             "auth": "Username/Password is wrong.",
             "connection": "Unable to connect to the server.",
             "unknown": "Unknown error occurred.",
-            "pairing": "Nuki is not in pairing mode.\nPut Nuki in pairing mode by pressing the button 6 seconds, Then try again"
+            "pairing": "Nuki is not in pairing mode.\nPut Nuki in pairing mode by pressing the button 5 seconds, Then try again"
         }
     }
 }
