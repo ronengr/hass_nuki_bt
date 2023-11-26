@@ -41,8 +41,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     address: str = entry.data[CONF_DEVICE_ADDRESS]
 
+    if not bluetooth.async_address_present(hass, address, connectable=True):
+        raise ConfigEntryNotReady(f"Could not find Nuki with address {address}")
+
     ble_device = bluetooth.async_ble_device_from_address(
-        hass, address.upper(), connectable=True
+        hass, address, connectable=True
     )
     if not ble_device:
         raise ConfigEntryNotReady(f"Could not find Nuki with address {address}")
@@ -62,6 +65,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         client_type=client_type,
         name="HomeAssistant",
         ble_device=ble_device,
+        get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(
+            hass, addr, connectable=True
+        ),
     )
 
     hass.data[DOMAIN][entry.entry_id] = coordinator = NukiDataUpdateCoordinator(

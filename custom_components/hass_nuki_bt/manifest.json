@@ -11,7 +11,7 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "bluetooth"
+    "bluetooth_adapters"
   ],
   "documentation": "https://github.com/ronengr/hass_nuki_bt",
   "iot_class": "local_polling",
@@ -20,7 +20,7 @@
     "pyNukiBT"
   ],
   "requirements": [
-    "pyNukiBT==0.0.6"
+    "pyNukiBT==0.0.7"
   ],
-  "version": "0.0.6"
+  "version": "0.0.8"
 }

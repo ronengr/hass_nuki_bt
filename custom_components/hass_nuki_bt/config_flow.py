@@ -7,7 +7,7 @@ from nacl.public import PrivateKey
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+from homeassistant.components import bluetooth
 from homeassistant.const import CONF_NAME, CONF_PIN
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
@@ -44,13 +44,13 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._data: dict = {}
 
     async def async_step_bluetooth(
-        self, discovery_info: BluetoothServiceInfoBleak
+        self, discovery_info: bluetooth.BluetoothServiceInfoBleak
     ) -> FlowResult:
         """Handle the bluetooth discovery step."""
         LOGGER.info("Discovered bluetooth device: %s", discovery_info.as_dict())
         await self.async_set_unique_id(format_unique_id(discovery_info.address))
         self._abort_if_unique_id_configured()
-        self._data[CONF_DEVICE_ADDRESS] = discovery_info.address
+        self._data[CONF_DEVICE_ADDRESS] = discovery_info.address.upper()
         self._data[CONF_NAME] = discovery_info.name
         self.context["title_placeholders"] = {
             "name": self._data[CONF_NAME],
@@ -137,6 +137,10 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             client_type = NukiConst.NukiClientType.APP
         else:
             client_type = NukiConst.NukiClientType.BRIDGE
+        ble_device = bluetooth.async_ble_device_from_address(
+            self.hass, self._data[CONF_DEVICE_ADDRESS], connectable=True
+        )
+
         device = NukiDevice(
             address=self._data[CONF_DEVICE_ADDRESS],
             auth_id=None,
@@ -146,6 +150,10 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             app_id=app_id,
             name="HomeAssistant",
             client_type=client_type,
+            ble_device=ble_device,
+            get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(
+                self.hass, addr, connectable=True
+            ),
         )
         try:
             ret = await device.pair()
@@ -163,7 +171,7 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._data[CONF_PRIVATE_KEY] = private_key.hex()
         self._data[CONF_APP_ID] = str(app_id)
 
-        device.disconnect()
+        await device.disconnect()
 
         return self.async_create_entry(
             title=self._data[CONF_NAME],

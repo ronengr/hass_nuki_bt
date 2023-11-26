@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 import async_timeout
 
+from bleak import BleakError
+
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.active_update_coordinator import (
     ActiveBluetoothDataUpdateCoordinator,
@@ -145,6 +147,9 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         """Wait for the device to be ready."""
         with contextlib.suppress(asyncio.TimeoutError):
             async with async_timeout.timeout(DEVICE_STARTUP_TIMEOUT):
-                await self._async_update()
+                try:
+                    await self._async_update()
+                except BleakError:
+                    return False
                 return True
         return False
