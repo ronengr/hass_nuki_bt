@@ -69,7 +69,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         )
         return super()._async_start()
 
-    @callable
+    @callback
     def _async_stop(self) -> None:
         if self._unsubscribe_nuki_callbacks is not None:
             self._unsubscribe_nuki_callbacks()
