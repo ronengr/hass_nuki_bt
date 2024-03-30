@@ -55,7 +55,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         self.device_name = device_name
         self.base_unique_id = base_unique_id
         self.model = None
-        self.last_nuki_log_entry = {}
+        self.last_nuki_log_entry = {"index" : 0}
         self._security_pin = security_pin
         self._nuki_listeners: dict[
             CALLBACK_TYPE, tuple[CALLBACK_TYPE, object | None]
@@ -110,17 +110,18 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         await self.device.update_state()
         if self._security_pin:
             # get the latest log enrty
+            # todo: check if Nuki looging is enabled
             logs = await self.device.request_log_entries(
                 security_pin=self._security_pin, count=1
             )
             if logs[0].type == NukiConst.LogEntryType.LOCK_ACTION:
                 # todo: handle other log types
                 self.last_nuki_log_entry = logs[0]
-            elif logs[0].index > self.last_nuki_log_entry.index:
+            elif logs[0].index > self.last_nuki_log_entry["index"]:
                 # if there are new log entries, get max 10 entries
                 logs = await self.device.request_log_entries(
                     security_pin=self._security_pin,
-                    count=min(10, logs[0].index - self.last_nuki_log_entry.index),
+                    count=min(10, logs[0].index - self.last_nuki_log_entry["index"]),
                     start_index=logs[0].index,
                 )
                 for log in logs:
