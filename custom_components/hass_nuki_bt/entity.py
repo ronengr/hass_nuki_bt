@@ -39,10 +39,10 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
             model=coordinator.device.device_type,
             name=coordinator.device_name,
             hw_version=".".join(
-                str(x) for x in coordinator.device.config["hardware_revision"]
+                str(x) for x in coordinator.device.config.get("hardware_revision",[])
             ),
             sw_version=".".join(
-                str(x) for x in coordinator.device.config["firmware_version"]
+                str(x) for x in coordinator.device.config.get("firmware_version",[])
             ),
         )
 

@@ -39,7 +39,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         icon="mdi:lock",
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda slf: slf.device.config[slf.sensor],
+        info_function=lambda slf: slf.device.config.get(slf.sensor),
     ),
     "rssi": NukiSensorEntityDescription(
         key="rssi",
