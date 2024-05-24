@@ -26,6 +26,18 @@ body:
         required: true
 - type: textarea
   attributes:
+    label: "Nuki Device type"
+    description: "Please specify the Nuki device you are using."
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: "hass_nuki_bt version"
+    description: "The version of hass_nuki_bt installed on your machine."
+  validations:
+    required: true
+- type: textarea
+  attributes:
     label: "Describe the issue"
     description: "A clear and concise description of what the issue is."
   validations:
