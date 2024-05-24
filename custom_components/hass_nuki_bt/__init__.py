@@ -82,9 +82,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         security_pin=int(entry.data.get(CONF_PIN, 0)),
     )
 
-    entry.async_on_unload(coordinator.async_start())
     if not await coordinator.async_wait_ready():
         raise ConfigEntryNotReady(f"{address} is not advertising state")
+
+    entry.async_on_unload(coordinator.async_start())
 
     # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     # await hass.config_entries.async_forward_entry_setups(
