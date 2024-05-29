@@ -107,10 +107,12 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         self, service_info: bluetooth.BluetoothServiceInfoBleak = None
     ) -> None:
         """Poll the device."""
+        if service_info:
+            self.device.set_ble_device(service_info.device)
         await self.device.update_state()
         if self._security_pin:
-            # get the latest log enrty
-            # todo: check if Nuki looging is enabled
+            # get the latest log entry
+            # todo: check if Nuki logging is enabled
             logs = await self.device.request_log_entries(
                 security_pin=self._security_pin, count=1
             )
