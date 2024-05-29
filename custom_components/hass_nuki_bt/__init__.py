@@ -5,6 +5,7 @@ https://github.com/ludeeus/hass_nuki_bt
 """
 from __future__ import annotations
 import logging
+from bleak import BleakError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_NAME, CONF_PIN
@@ -70,6 +71,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass, addr, connectable=True
         ),
     )
+    try:
+        await device.connect()
+    except BleakError:
+        raise ConfigEntryNotReady(f"Could not connect to {address}")
 
     hass.data[DOMAIN][entry.entry_id] = coordinator = NukiDataUpdateCoordinator(
         hass=hass,

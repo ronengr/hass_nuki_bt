@@ -155,6 +155,7 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 self.hass, addr, connectable=True
             ),
         )
+        await device.connect()
         try:
             ret = await device.pair()
         except NukiErrorException as ex:
