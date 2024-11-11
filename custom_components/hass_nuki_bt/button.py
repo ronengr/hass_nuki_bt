@@ -1,7 +1,8 @@
 """Button platform for hass_nuki_bt."""
 from dataclasses import dataclass
+from collections.abc import Callable
 import logging
-from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
+from homeassistant.components.button import ButtonEntity, ButtonEntityDescription, ButtonDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -21,19 +22,34 @@ class NukiButtonEntityDescription(ButtonEntityDescription):
     """A class that describes nuki button entities."""
 
     action: NukiLockConst.LockAction = None
+    action_function: Callable = lambda slf: slf.async_lock_action(slf._action)
 
 
 BUTTON_TYPES: [NukiButtonEntityDescription] = (
     NukiButtonEntityDescription(
-        key="battery_critical", name="Unlatch", action=NukiLockConst.LockAction.UNLATCH
+        key="unlatch",
+        name="Unlatch",
+        icon="mdi:door-open",
+        action=NukiLockConst.LockAction.UNLATCH,
     ),
     NukiButtonEntityDescription(
-        name="Lock 'n' Go", key="lockngo", action=NukiLockConst.LockAction.LOCK_N_GO
+        name="Lock 'n' Go",
+        key="lockngo",
+        icon="mdi:door-closed-lock",
+        action=NukiLockConst.LockAction.LOCK_N_GO,
     ),
     NukiButtonEntityDescription(
         name="Lock 'n' Go with unlatch",
         key="lockngounlatch",
+        icon="mdi:door-closed-lock",
         action=NukiLockConst.LockAction.LOCK_N_GO_UNLATCH,
+    ),
+    NukiButtonEntityDescription(
+        key="query_state",
+        name="Query lock state",
+        icon="mdi:lock-question",
+        device_class=ButtonDeviceClass.UPDATE,
+        action_function=lambda slf: slf.coordinator._async_update(),
     ),
 )
 
@@ -59,7 +75,8 @@ class NukiButton(ButtonEntity, NukiEntity):
         self._attr_name = btn.name
         self._attr_unique_id = f"{coordinator.base_unique_id}-{btn.key}"
         self._action = btn.action
+        self._attr_icon = btn.icon
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        await self.async_lock_action(self._action)
+        await self.entity_description._action_function(self)
