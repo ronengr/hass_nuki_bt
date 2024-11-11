@@ -113,7 +113,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         if service_info:
             self.device.set_ble_device(service_info.device)
         await self.device.update_state()
-        await self._async_get_last_action_log_entry()
+        await self.async_get_last_action_log_entry()
         self.async_update_nuki_listeners()
 
     @callback
@@ -140,7 +140,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
                 return True
         return False
 
-    async def _async_get_last_action_log_entry(self):
+    async def async_get_last_action_log_entry(self):
         if self._security_pin:
             # get the latest log entry
             # todo: check if Nuki logging is enabled
