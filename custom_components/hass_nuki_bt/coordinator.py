@@ -141,6 +141,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         return False
 
     async def async_get_last_action_log_entry(self):
+        """Get the last action log entry."""
         if self._security_pin:
             # get the latest log entry
             # todo: check if Nuki logging is enabled
