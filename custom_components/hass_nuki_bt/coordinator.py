@@ -65,7 +65,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
     @callback
     def _async_start(self) -> None:
         self._unsubscribe_nuki_callbacks = self.device.subscribe(
-            self.async_update_nuki_listeners
+            self._nuki_device_callback
         )
         return super()._async_start()
 
@@ -90,6 +90,9 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         return remove_listener
 
     @callback
+    def _nuki_device_callback(self, command: NukiConst.NukiCommand = None) -> None:
+        self.async_update_nuki_listeners()
+
     def async_update_nuki_listeners(self) -> None:
         """Update all registered listeners."""
         for update_callback, _ in list(self._nuki_listeners.values()):
@@ -110,28 +113,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         if service_info:
             self.device.set_ble_device(service_info.device)
         await self.device.update_state()
-        if self._security_pin:
-            # get the latest log entry
-            # todo: check if Nuki logging is enabled
-            logs = await self.device.request_log_entries(
-                security_pin=self._security_pin, count=1
-            )
-            if logs:
-                if logs[0].type == NukiConst.LogEntryType.LOCK_ACTION:
-                    # todo: handle other log types
-                    self.last_nuki_log_entry = logs[0]
-                elif logs[0].index > self.last_nuki_log_entry["index"]:
-                    # if there are new log entries, get max 10 entries
-                    logs = await self.device.request_log_entries(
-                        security_pin=self._security_pin,
-                        count=min(10, logs[0].index - self.last_nuki_log_entry["index"]),
-                        start_index=logs[0].index,
-                    )
-                    for log in logs:
-                        if log.type == NukiConst.LogEntryType.LOCK_ACTION:
-                            self.last_nuki_log_entry = log
-                            break
-
+        await self._async_get_last_action_log_entry()
         self.async_update_nuki_listeners()
 
     @callback
@@ -157,3 +139,27 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
                     return False
                 return True
         return False
+
+    async def _async_get_last_action_log_entry(self):
+        if self._security_pin:
+            # get the latest log entry
+            # todo: check if Nuki logging is enabled
+            logs = await self.device.request_log_entries(
+                security_pin=self._security_pin, count=1
+            )
+            if logs:
+                if logs[0].type == NukiConst.LogEntryType.LOCK_ACTION:
+                    # todo: handle other log types
+                    self.last_nuki_log_entry = logs[0]
+                elif logs[0].index > self.last_nuki_log_entry["index"]:
+                    # if there are new log entries, get max 10 entries
+                    logs = await self.device.request_log_entries(
+                        security_pin=self._security_pin,
+                        count=min(10, logs[0].index - self.last_nuki_log_entry["index"]),
+                        start_index=logs[0].index,
+                    )
+                    for log in logs:
+                        if log.type == NukiConst.LogEntryType.LOCK_ACTION:
+                            self.last_nuki_log_entry = log
+                            break
+
