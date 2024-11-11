@@ -1,9 +1,7 @@
 """NukiEntity class."""
 from __future__ import annotations
 
-from collections.abc import Mapping
 import logging
-from typing import Any
 
 from homeassistant.components.bluetooth.passive_update_coordinator import (
     PassiveBluetoothCoordinatorEntity,
@@ -11,7 +9,7 @@ from homeassistant.components.bluetooth.passive_update_coordinator import (
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
-from pyNukiBT import NukiDevice, NukiErrorException
+from pyNukiBT import NukiDevice
 
 from .const import MANUFACTURER
 from .coordinator import NukiDataUpdateCoordinator
@@ -29,8 +27,6 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
         """Initialize the entity."""
         super().__init__(coordinator)
         self.device = coordinator.device
-        self._last_run_success: bool | None = None
-        self._last_result = None
         self._address = coordinator.ble_device.address
         self._attr_unique_id = coordinator.base_unique_id
         self._attr_device_info = DeviceInfo(
@@ -45,11 +41,6 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
                 str(x) for x in coordinator.device.config.get("firmware_version",[])
             ),
         )
-
-    @property
-    def extra_state_attributes(self) -> Mapping[Any, Any]:
-        """Return the state attributes."""
-        return {"last_run_success": self._last_run_success}
 
     @callback
     def _async_update_attrs(self) -> None:
@@ -70,21 +61,8 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
 
     async def async_lock_action(self, action):
         """Do door action."""
-        try:
-            user = await self.hass.auth.async_get_user(self._context.user_id)
-            user_name = user.name if user else None
-            msg = await self.device.lock_action(action, name_suffix=user_name)
-        except NukiErrorException as ex:
-            self._last_run_success = False
-            self._last_result = ex.error_code
-        else:
-            self._last_run_success = True
-            self._last_result = msg.status
-        self.async_write_ha_state()
-
-    # async def async_update(self) -> None:
-    #     """Update the entity.
-
-    #     Only used by the generic entity update service.
-    #     """
-    #     await self._device.update_state()
+        user = await self.hass.auth.async_get_user(self._context.user_id)
+        user_name = user.name if user else None
+        await self.device.lock_action(action, name_suffix=user_name, wait_for_completed = True)
+        await self.coordinator.async_get_last_action_log_entry()
+        self.coordinator.async_update_nuki_listeners()
