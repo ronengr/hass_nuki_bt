@@ -76,7 +76,8 @@ class NukiButton(ButtonEntity, NukiEntity):
         self._attr_unique_id = f"{coordinator.base_unique_id}-{btn.key}"
         self._action = btn.action
         self._attr_icon = btn.icon
+        self.entity_description = btn
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        await self.entity_description._action_function(self)
+        await self.entity_description.action_function(self)
