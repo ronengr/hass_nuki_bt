@@ -55,6 +55,13 @@ SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = {
         icon="hass:weather-night",
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    "was_autounlock": NukiBinarySensorEntityDescription(
+        key="was_autounlock",
+        name="Last action was autounlock",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        info_function=lambda slf: flags & 0x1 == 1 if ((data:=slf.coordinator.last_nuki_log_entry.get("data")) and (flags := data.get("flags"))) \
+            else False,
+    ),
 }
 
 
