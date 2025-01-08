@@ -20,7 +20,7 @@
     "pyNukiBT"
   ],
   "requirements": [
-    "pyNukiBT==0.0.16"
+    "pyNukiBT==0.0.17"
   ],
   "version": "0.0.0"
 }
