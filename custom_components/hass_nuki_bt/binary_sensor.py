@@ -61,6 +61,7 @@ SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = {
         entity_category=EntityCategory.DIAGNOSTIC,
         info_function=lambda slf: flags & 0x1 == 1 if ((data:=slf.coordinator.last_nuki_log_entry.get("data")) and (flags := data.get("flags"))) \
             else False,
+        entity_registry_enabled_default=False,
     ),
 }
 

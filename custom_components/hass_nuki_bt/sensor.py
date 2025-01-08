@@ -130,8 +130,17 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         name="Last log timestamp",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda slf: ts.replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=slf.coordinator.device.keyturner_state['timezone_offset'])))\
+        info_function=lambda slf: ts.replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=slf.device.keyturner_state['timezone_offset']))) \
              if (ts := slf.coordinator.last_nuki_log_entry.get("timestamp")) else None,
+        entity_registry_enabled_default=False,
+    ),
+    "last_state_timestamp": NukiSensorEntityDescription(
+        key="last_state_timestamp",
+        name="Last state timestamp",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        info_function=lambda slf: ks['current_time'].replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=ks['timezone_offset']))) \
+            if (ks := slf.device.keyturner_state) else None,
         entity_registry_enabled_default=False,
     ),
 }
