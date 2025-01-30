@@ -10,6 +10,8 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.helpers.entity import EntityCategory
 
+from pyNukiBT import NukiConst
+
 from .const import DOMAIN
 from .entity import NukiEntity
 from .coordinator import NukiDataUpdateCoordinator
@@ -25,8 +27,7 @@ class NukiBinarySensorEntityDescription(BinarySensorEntityDescription):
         lambda slf: slf.device.keyturner_state[slf.sensor] != 0
     )
 
-
-SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = {
+SENSOR_TYPES_OPENER: dict[str, NukiBinarySensorEntityDescription] = {
     "battery_critical": NukiBinarySensorEntityDescription(
         key="battery_critical",
         name="Battery Critical",
@@ -39,8 +40,10 @@ SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = {
         name="Battery Charging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
         entity_category=EntityCategory.DIAGNOSTIC,
-        info_function=lambda slf: slf.device.is_battery_critical,
+        info_function=lambda slf: slf.device.is_battery_charging,
     ),
+}
+SENSOR_TYPES: dict[str, NukiBinarySensorEntityDescription] = SENSOR_TYPES_OPENER | {
     "accessory_battery_state": NukiBinarySensorEntityDescription(
         key="accessory_battery_state",
         name="Keypad Battery Critical",
@@ -70,8 +73,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Nuki sensor based on a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities = [NukiBinarySensor(coordinator, sensor) for sensor in SENSOR_TYPES]
-    async_add_entities(entities)
+    if coordinator.device.device_type == NukiConst.NukiDeviceType.OPENER:
+        async_add_entities([NukiBinarySensor(coordinator, sensor) for sensor in SENSOR_TYPES_OPENER])
+    else:
+        async_add_entities([NukiBinarySensor(coordinator, sensor) for sensor in SENSOR_TYPES])
     return True
 
 
