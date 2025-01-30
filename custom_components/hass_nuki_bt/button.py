@@ -6,7 +6,7 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from pyNukiBT import NukiDevice, NukiLockConst
+from pyNukiBT import NukiConst, NukiDevice, NukiLockConst, NukiOpenerConst
 
 from .entity import NukiEntity
 
@@ -25,10 +25,33 @@ class NukiButtonEntityDescription(ButtonEntityDescription):
     action_function: Callable = lambda slf: slf.async_lock_action(slf._action)
 
 
-BUTTON_TYPES: [NukiButtonEntityDescription] = (
+BUTTON_TYPES_COMMON: list[NukiButtonEntityDescription] = [
     NukiButtonEntityDescription(
-        key="unlatch",
+        key="query_state",
+        name="Query lock state",
+        icon="mdi:lock-question",
+        device_class=ButtonDeviceClass.UPDATE,
+        action_function=lambda slf: slf.coordinator._async_update(),
+    ),
+]
+BUTTON_TYPES_OPENER: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
+    NukiButtonEntityDescription(
+        name="Activate Continuous Mode",
+        key="activate_cm",
+        icon="mdi:home-lock",
+        action=NukiOpenerConst.LockAction.ACTIVATE_CM,
+    ),
+    NukiButtonEntityDescription(
+        name="Deactivate Continuous Mode",
+        key="deactivate_cm",
+        icon="mdi:home-lock-open",
+        action=NukiOpenerConst.LockAction.DEACTIVATE_CM,
+    ),
+]
+BUTTON_TYPES_LOCK: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
+    NukiButtonEntityDescription(
         name="Unlatch",
+        key="unlatch",
         icon="mdi:door-open",
         action=NukiLockConst.LockAction.UNLATCH,
     ),
@@ -44,14 +67,7 @@ BUTTON_TYPES: [NukiButtonEntityDescription] = (
         icon="mdi:door-closed-lock",
         action=NukiLockConst.LockAction.LOCK_N_GO_UNLATCH,
     ),
-    NukiButtonEntityDescription(
-        key="query_state",
-        name="Query lock state",
-        icon="mdi:lock-question",
-        device_class=ButtonDeviceClass.UPDATE,
-        action_function=lambda slf: slf.coordinator._async_update(),
-    ),
-)
+]
 
 
 async def async_setup_entry(
@@ -59,7 +75,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up Nuki lock based on a config entry."""
     coordinator: NukiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([NukiButton(coordinator, btn) for btn in BUTTON_TYPES])
+    if coordinator.device.device_type == NukiConst.NukiDeviceType.OPENER:
+        async_add_entities([NukiButton(coordinator, btn) for btn in BUTTON_TYPES_OPENER])
+    else:
+        async_add_entities([NukiButton(coordinator, btn) for btn in BUTTON_TYPES_LOCK])
 
 
 class NukiButton(ButtonEntity, NukiEntity):
