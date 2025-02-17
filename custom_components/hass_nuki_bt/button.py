@@ -25,8 +25,16 @@ class NukiButtonEntityDescription(ButtonEntityDescription):
     action_function: Callable = lambda slf: slf.async_lock_action(slf._action)
 
 
-
-BUTTON_TYPES_OPENER: [NukiButtonEntityDescription] = (
+BUTTON_TYPES_COMMON: list[NukiButtonEntityDescription] = [
+    NukiButtonEntityDescription(
+        key="query_state",
+        name="Query lock state",
+        icon="mdi:lock-question",
+        device_class=ButtonDeviceClass.UPDATE,
+        action_function=lambda slf: slf.coordinator._async_update(),
+    ),
+]
+BUTTON_TYPES_OPENER: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
     NukiButtonEntityDescription(
         name="Activate Continuous Mode",
         key="activate_cm",
@@ -39,15 +47,8 @@ BUTTON_TYPES_OPENER: [NukiButtonEntityDescription] = (
         icon="mdi:home-lock-open",
         action=NukiOpenerConst.LockAction.DEACTIVATE_CM,
     ),
-    NukiButtonEntityDescription(
-        key="query_state",
-        name="Query lock state",
-        icon="mdi:lock-question",
-        device_class=ButtonDeviceClass.UPDATE,
-        action_function=lambda slf: slf.coordinator._async_update(),
-    ),
-)
-BUTTON_TYPES: [NukiButtonEntityDescription] = (
+]
+BUTTON_TYPES_LOCK: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
     NukiButtonEntityDescription(
         name="Lock 'n' Go",
         key="lockngo",
@@ -60,14 +61,7 @@ BUTTON_TYPES: [NukiButtonEntityDescription] = (
         icon="mdi:door-closed-lock",
         action=NukiLockConst.LockAction.LOCK_N_GO_UNLATCH,
     ),
-    NukiButtonEntityDescription(
-        key="query_state",
-        name="Query lock state",
-        icon="mdi:lock-question",
-        device_class=ButtonDeviceClass.UPDATE,
-        action_function=lambda slf: slf.coordinator._async_update(),
-    ),
-)
+]
 
 
 async def async_setup_entry(
@@ -78,7 +72,7 @@ async def async_setup_entry(
     if coordinator.device.device_type == NukiConst.NukiDeviceType.OPENER:
         async_add_entities([NukiButton(coordinator, btn) for btn in BUTTON_TYPES_OPENER])
     else:
-        async_add_entities([NukiButton(coordinator, btn) for btn in BUTTON_TYPES])
+        async_add_entities([NukiButton(coordinator, btn) for btn in BUTTON_TYPES_LOCK])
 
 
 class NukiButton(ButtonEntity, NukiEntity):
