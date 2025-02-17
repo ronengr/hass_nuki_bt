@@ -51,6 +51,13 @@ BUTTON_TYPES: [NukiButtonEntityDescription] = (
         device_class=ButtonDeviceClass.UPDATE,
         action_function=lambda slf: slf.coordinator._async_update(),
     ),
+    NukiButtonEntityDescription(
+        key="sync_time",
+        name="Sync Nuki time",
+        icon="mdi:timer-sync",
+        action_function=lambda slf: slf.device.update_nuki_time(slf.coordinator._security_pin),
+        entity_registry_enabled_default=False,
+    ),
 )
 
 
