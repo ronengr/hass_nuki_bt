@@ -60,7 +60,7 @@ class NukiLock(NukiEntity, LockEntity):
     async def async_open(self, **kwargs: Any) -> None:
         """Open the door latch."""
         await self.async_lock_action(NukiLockConst.LockAction.UNLATCH)
-        
+
 class NukiOpener(NukiEntity, LockEntity):
     """Representation of a Nuki lock."""
 
