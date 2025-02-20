@@ -57,6 +57,12 @@ BUTTON_TYPES_OPENER: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
 ]
 BUTTON_TYPES_LOCK: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
     NukiButtonEntityDescription(
+        name="Unlatch",
+        key="unlatch",
+        icon="mdi:door-open",
+        action=NukiLockConst.LockAction.UNLATCH,
+    ),
+    NukiButtonEntityDescription(
         name="Lock 'n' Go",
         key="lockngo",
         icon="mdi:door-closed-lock",
