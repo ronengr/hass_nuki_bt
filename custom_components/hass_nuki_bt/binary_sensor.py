@@ -44,7 +44,7 @@ SENSOR_TYPES_COMMON: list[NukiBinarySensorEntityDescription] = [
     ),
 ]
 SENSOR_TYPES_OPENER: list[NukiBinarySensorEntityDescription] = SENSOR_TYPES_COMMON
-SENSOR_TYPES_LOCK: list[NukiBinarySensorEntityDescription] = [
+SENSOR_TYPES_LOCK: list[NukiBinarySensorEntityDescription] = SENSOR_TYPES_COMMON + [
     NukiBinarySensorEntityDescription(
         key="accessory_battery_state",
         name="Keypad Battery Critical",
