@@ -87,9 +87,11 @@ class NukiBinarySensor(NukiEntity, BinarySensorEntity):
     def __init__(self, coordinator: NukiDataUpdateCoordinator, sensor: NukiBinarySensorEntityDescription) -> None:
         """Initialize the Niki sensor."""
         super().__init__(coordinator)
+        self.sensor = sensor.key
         self._attr_name = sensor.name
         self._attr_unique_id = f"{coordinator.base_unique_id}-{sensor.key}"
-        self._info_function = self.entity_description.info_function
+        self.entity_description = sensor
+        self._info_function = sensor.info_function
         self._async_update_attrs()
 
     def _async_update_attrs(self) -> None:
