@@ -8,11 +8,14 @@ import logging
 from asyncio import CancelledError, TimeoutError
 from bleak import BleakError
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_NAME, CONF_PIN
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.components import bluetooth
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, ConfigEntryAuthFailed
+from homeassistant.helpers import config_validation as cv
+
 
 from pyNukiBT import NukiDevice, NukiConst
 
@@ -37,7 +40,10 @@ PLATFORMS: list[Platform] = [
 
 _LOGGER = logging.getLogger(__name__)
 
-
+UPDATE_NUKI_TIME_SERVICE_NAME = "update_nuki_time"
+UPDATE_NUKI_TIME_SCHEMA = vol.Schema({
+    vol.Optional("time"): cv.datetime,
+})
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
@@ -105,6 +111,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    async def async_handle_update_nuki_time(call: ServiceCall) -> ServiceResponse:
+        time = call.data.get("time")
+        if not coordinator._security_pin:
+            raise ConfigEntryAuthFailed("Security PIN is required to update nuki time.")
+        await device.update_nuki_time(coordinator._security_pin, time)
+
+    hass.services.async_register(
+        DOMAIN,
+        UPDATE_NUKI_TIME_SERVICE_NAME,
+        async_handle_update_nuki_time,
+        schema=UPDATE_NUKI_TIME_SCHEMA,
+        supports_response=SupportsResponse.NONE,
+    )
     return True
 
 

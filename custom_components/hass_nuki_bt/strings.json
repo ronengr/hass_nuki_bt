@@ -39,5 +39,17 @@
             "unknown": "Unknown error occurred.",
             "pairing": "Nuki is not in pairing mode.\nPut Nuki in pairing mode by pressing the button 5 seconds, Then try again"
         }
+    },
+    "services": {
+        "update_nuki_time": {
+          "name": "Update Nuki time",
+          "description": "Update Nuki internal date and time.",
+          "fields": {
+            "time": {
+              "name": "New datetime",
+              "description": "Optional. The datetime to send to Nuki. If no time is given, current UTC time is used."
+              }
+            }
+        }
     }
 }

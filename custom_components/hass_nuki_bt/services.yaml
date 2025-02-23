@@ -1,0 +1,4 @@
+update_nuki_time:
+  fields:
+    time:
+      required: false
