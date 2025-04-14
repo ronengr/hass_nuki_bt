@@ -1,0 +1,55 @@
+{
+    "title": "Serratura Nuki",
+    "config": {
+        "flow_title": "{name} ({address})",
+        "step": {
+            "step1": {
+                "title": "Nuovo dispositivo Nuki",
+                "description": "Seleziona",
+                "data": {
+                    "name": "Nome dispositivo",
+                    "device_address": "Indirizzo dispositivo",
+                    "pin": "PIN di sicurezza (Optional)",
+                    "client_type": "Tipo di client"
+                }
+            },
+            "manual": {
+                "title": "Nuovo dispositivo Nuki (manuale)",
+                "description": "Inserisci le informazioni manualmente",
+                "data": {
+                    "device_id": "ID Dispositivo",
+                    "auth_id": "ID Auth",
+                    "private_key": "Private Key",
+                    "public_key": "Public Key",
+                    "device_public_key": "Public Key dispositivo",
+                    "app_id": "ID app"
+                }
+            },
+            "choose_method": {
+                "description": "Sceli un metodo per configurare {name} ({address}).\nE' consigliato l'accoppiamento automatico.\nSeleziona manuale solamente se sai quello che stai facendo\n\nPrima di cliccare \"Accoppia\" metti il tuo Nuki in modalità accoppiamento premendo il bottone del Nuki per almeno 5 secondi finchè la luce rimane accesa fissa.",
+                "menu_options": {
+                    "pair": "Accoppia il dispositivo automaticamente (consigliato)",
+                    "manual": "Inserisci le informazioni di accoppaimento manualmente"
+                }
+            }
+        },
+        "error": {
+            "auth": "Username o Password errata.",
+            "connection": "Impossibile connettersi al server.",
+            "unknown": "Errore sconosciuto.",
+            "pairing": "Nuki non è in modalità accoppiamento.\nMetti il Nuki in modalità accoppiamento premendo il bottone per 5 secondi, poi prova nuovamente"
+        }
+    },
+    "services": {
+        "update_nuki_time": {
+          "name": "Aggiorna orologio del Nuki",
+          "description": "Aggiorna la data e l'ora interna del Nuki.",
+          "fields": {
+            "time": {
+              "name": "Nuova data e ora",
+              "description": "Opzionale. Data e ora da inviare al Nuki. Se non viene indcata l'ora verrà usata la corrente ora UTC."
+              }
+            }
+        }
+    }
+}
