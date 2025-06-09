@@ -9,13 +9,13 @@
 
 [![Community Forum][forum-shield]][forum]
 
-Nuki lock integration for Home Asistance.
-This integration communicates directly with Nuki over Bluetooth. No need for bridge.
+Nuki lock integration for Home Assistant.
+This integration communicates directly with Nuki over Bluetooth. No need for a bridge.
 
 
 ## Background
-- This is based on [RaspiNukiBridge](https://github.com/regevbr/RaspiNukiBridge) by [dauden1184](https://github.com/dauden1184/) and [regevbr](https://github.com/regevbr)
-- This is heavily inspired by [kvj](https://github.com/kvj)'s [hass_nuki_ng](https://github.com/kvj/hass_nuki_ng) and [technyon](https://github.com/technyon)'s [nuki_hub](https://github.com/technyon/nuki_hub)
+- This project is based on [RaspiNukiBridge](https://github.com/regevbr/RaspiNukiBridge) by [dauden1184](https://github.com/dauden1184/) and [regevbr](https://github.com/regevbr)
+- This project is heavily inspired by [kvj](https://github.com/kvj)'s [hass_nuki_ng](https://github.com/kvj/hass_nuki_ng) and [technyon](https://github.com/technyon)'s [nuki_hub](https://github.com/technyon/nuki_hub)
 
 ## Setup
 
@@ -32,13 +32,13 @@ This integration communicates directly with Nuki over Bluetooth. No need for bri
 
 ### Configuration:
 * Go to Settings -> Devices & Services
-* The integration should automatically discover you Nuki lock. You Should see a new Discovered Device, just click on "Configure" to configure it.
+* The integration should automatically discover your Nuki lock. You Should see a new Discovered Device, just click on "Configure" to configure it.
   * If no look was discovered, and you know the Nuki's BT address, you can try to add it manually by clicking on "Add Integration"
 * Select a Device Name and Client Type
 * Enable pairing mode on the Nuki lock by holding down the button on the Nuki Smart Lock for 5 seconds until the LED ring is permanently glowing.
 * Select "Pair device automatically"
   * It is possible to configure the device manually, if you have the pairing-information from an already paired device.
-    Use this option only if you know what you are doing. This is mostly ment for development.
+    Use this option only if you know what you are doing. This is mostly meant for development.
 
 #### Client Type:
 hass_nuki_bt can connect to the Nuki lock in 2 ways:
