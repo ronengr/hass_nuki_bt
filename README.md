@@ -50,6 +50,8 @@ hass_nuki_bt can connect to the Nuki lock in 2 ways:
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
 
+Latest Nuki Bluetooth API spec: https://developer.nuki.io/t/bluetooth-api/27
+
 ***
 
 [hass_nuki_bt]: https://github.com/ronengr/hass_nuki_bt
