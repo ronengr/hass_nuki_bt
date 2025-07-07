@@ -1,4 +1,9 @@
 update_nuki_time:
+  target:
+    entity:
+      domain: lock
+      # Keep in sync with const.DOMAIN.
+      integration: hass_nuki_bt
   fields:
     time:
       required: false

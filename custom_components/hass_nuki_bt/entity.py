@@ -7,6 +7,7 @@ from homeassistant.components.bluetooth.passive_update_coordinator import (
     PassiveBluetoothCoordinatorEntity,
 )
 from homeassistant.core import callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from pyNukiBT import NukiDevice
@@ -66,3 +67,9 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
         await self.device.lock_action(action, name_suffix=user_name, wait_for_completed = True)
         await self.coordinator.async_get_last_action_log_entry()
         self.coordinator.async_update_nuki_listeners()
+
+    async def async_handle_update_nuki_time(self, time=None):
+        if not self.coordinator._security_pin:
+            raise ServiceValidationError("Security PIN is required to update nuki time.")
+        result = await self.device.update_nuki_time(self.coordinator._security_pin, time)
+        return result.status
