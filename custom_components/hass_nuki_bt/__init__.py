@@ -8,7 +8,6 @@ import logging
 from asyncio import CancelledError, TimeoutError
 from bleak import BleakError
 
-import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_NAME, CONF_PIN
 from homeassistant.core import HomeAssistant
