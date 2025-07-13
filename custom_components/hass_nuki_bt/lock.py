@@ -45,10 +45,14 @@ class NukiLock(NukiEntity, LockEntity):
 
     _device: NukiDevice
 
+    # Mark this as default entity for the device. This will avoid adding any
+    # suffixes to device name when creating entity_id:
+    # "Front door" -> entity_id: "lock.front_door" (not "lock.front_door_lock").
+    _attr_name = None
+
     def __init__(self, coordinator: NukiDataUpdateCoordinator) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
-        self._attr_name = "Lock"
         self._attr_unique_id = f"{coordinator.base_unique_id}-lock"
         self._attr_supported_features = LockEntityFeature.OPEN
         self._async_update_attrs()
@@ -76,14 +80,16 @@ class NukiLock(NukiEntity, LockEntity):
         await self.async_lock_action(NukiLockConst.LockAction.UNLATCH)
 
 class NukiOpener(NukiEntity, LockEntity):
-    """Representation of a Nuki lock."""
+    """Representation of a Nuki opener."""
 
     _device: NukiDevice
+
+    # See the remark in NukiLock above.
+    _attr_name = None
 
     def __init__(self, coordinator: NukiDataUpdateCoordinator) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
-        self._attr_name = "Lock"
         self._attr_unique_id = f"{coordinator.base_unique_id}-lock"
         self._attr_supported_features = LockEntityFeature.OPEN
         self._async_update_attrs()
