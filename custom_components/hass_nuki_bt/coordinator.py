@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import async_timeout
 
@@ -14,11 +14,10 @@ from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.active_update_coordinator import (
     ActiveBluetoothDataUpdateCoordinator,
 )
-from homeassistant.core import HomeAssistant, callback, CALLBACK_TYPE
+from homeassistant.core import HomeAssistant, callback
 from pyNukiBT import NukiDevice, NukiConst
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,9 +56,6 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         self.model = None
         self.last_nuki_log_entry = {"index" : 0}
         self._security_pin = security_pin
-        self._nuki_listeners: dict[
-            CALLBACK_TYPE, tuple[CALLBACK_TYPE, object | None]
-        ] = {}
         self._unsubscribe_nuki_callbacks = None
 
     @callback
@@ -76,27 +72,8 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         return super()._async_stop()
 
     @callback
-    def async_add_listener(
-        self, update_callback: CALLBACK_TYPE, context: Any = None
-    ) -> Callable[[], None]:
-        """Listen for data updates."""
-
-        @callback
-        def remove_listener() -> None:
-            """Remove update listener."""
-            self._nuki_listeners.pop(remove_listener)
-
-        self._nuki_listeners[remove_listener] = (update_callback, context)
-        return remove_listener
-
-    @callback
     def _nuki_device_callback(self, command: NukiConst.NukiCommand = None) -> None:
-        self.async_update_nuki_listeners()
-
-    def async_update_nuki_listeners(self) -> None:
-        """Update all registered listeners."""
-        for update_callback, _ in list(self._nuki_listeners.values()):
-            update_callback()
+        self.async_update_listeners()
 
     @callback
     def _needs_poll(
@@ -114,7 +91,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
             self.device.set_ble_device(service_info.device)
         await self.device.update_state()
         await self.async_get_last_action_log_entry()
-        self.async_update_nuki_listeners()
+        self.async_update_listeners()
 
     @callback
     def _async_handle_bluetooth_event(
