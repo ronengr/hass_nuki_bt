@@ -91,7 +91,6 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
             self.device.set_ble_device(service_info.device)
         await self.device.update_state()
         await self.async_get_last_action_log_entry()
-        self.async_update_listeners()
 
     @callback
     def _async_handle_bluetooth_event(
