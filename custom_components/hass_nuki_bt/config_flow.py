@@ -1,4 +1,5 @@
 """Adds config flow for Nuki."""
+
 import random
 from typing import Any
 import re
@@ -26,6 +27,7 @@ from .const import (
     CONF_PRIVATE_KEY,
     CONF_PUBLIC_KEY,
     CONF_CLIENT_TYPE,
+    CONF_IS_ULTRA,
     DOMAIN,
     LOGGER,
 )
@@ -100,7 +102,12 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     ): str,
                     vol.Optional(
                         CONF_PIN,
-                    ): str,
+                        default=None,
+                    ): int,
+                    vol.Optional(
+                        CONF_IS_ULTRA,
+                        default=False,
+                    ): bool,
                     vol.Required(CONF_CLIENT_TYPE, default="Bridge"): SelectSelector(
                         SelectSelectorConfig(
                             options=["Bridge", "App"],
@@ -149,6 +156,8 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             bridge_private_key=private_key,
             app_id=app_id,
             name="HomeAssistant",
+            pin=self._data[CONF_PIN],
+            is_ultra=self._data[CONF_IS_ULTRA],
             client_type=client_type,
             ble_device=ble_device,
             get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(

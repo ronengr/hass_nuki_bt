@@ -10,6 +10,7 @@
                     "name": "Device Name",
                     "device_address": "Device Address",
                     "pin": "Security PIN (Optional)",
+                    "is_ultra": "Nuki Ultra Smart Lock",
                     "client_type": "Client Type"
                 }
             },
