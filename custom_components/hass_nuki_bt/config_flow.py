@@ -27,7 +27,6 @@ from .const import (
     CONF_PRIVATE_KEY,
     CONF_PUBLIC_KEY,
     CONF_CLIENT_TYPE,
-    CONF_IS_ULTRA,
     DOMAIN,
     LOGGER,
 )
@@ -104,10 +103,6 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_PIN,
                         default=None,
                     ): int,
-                    vol.Optional(
-                        CONF_IS_ULTRA,
-                        default=False,
-                    ): bool,
                     vol.Required(CONF_CLIENT_TYPE, default="Bridge"): SelectSelector(
                         SelectSelectorConfig(
                             options=["Bridge", "App"],
@@ -156,8 +151,6 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             bridge_private_key=private_key,
             app_id=app_id,
             name="HomeAssistant",
-            pin=self._data[CONF_PIN],
-            is_ultra=self._data[CONF_IS_ULTRA],
             client_type=client_type,
             ble_device=ble_device,
             get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(
@@ -166,7 +159,7 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
         await device.connect()
         try:
-            ret = await device.pair()
+            ret = await device.pair(self._data[CONF_PIN])
         except NukiErrorException as ex:
             LOGGER.error(ex)
             if ex.error_code == NukiConst.ErrorCode.P_ERROR_NOT_PAIRING:

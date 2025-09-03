@@ -26,7 +26,6 @@ from .const import (
     CONF_PRIVATE_KEY,
     CONF_PUBLIC_KEY,
     CONF_CLIENT_TYPE,
-    CONF_IS_ULTRA,
     DOMAIN,
 )
 from .coordinator import NukiDataUpdateCoordinator
@@ -70,8 +69,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         app_id=int(entry.data[CONF_APP_ID]),
         client_type=client_type,
         name="HomeAssistant",
-        pin=entry.data[CONF_PIN],
-        is_ultra=entry.data[CONF_IS_ULTRA],
         ble_device=ble_device,
         get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(
             hass, addr, connectable=True
