@@ -70,7 +70,7 @@ class NukiEntity(PassiveBluetoothCoordinatorEntity[NukiDataUpdateCoordinator]):
 
     async def async_handle_update_nuki_time(self, time=None):
         """Update nuki time."""
-        if not self.coordinator._security_pin:
+        if self.coordinator._security_pin is None: #security pin can be 0, so check for None
             raise ServiceValidationError("Security PIN is required to update nuki time.")
         result = await self.device.update_nuki_time(self.coordinator._security_pin, time)
         return result.status

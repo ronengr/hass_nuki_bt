@@ -88,7 +88,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         base_unique_id=entry.unique_id,
         device_name=entry.data.get(CONF_NAME),
         connectable=True,
-        security_pin=int(entry.data.get(CONF_PIN, 0)),
+        security_pin=None if entry.data.get(CONF_PIN) is None else int(entry.data[CONF_PIN]),
     )
 
     if not await coordinator.async_wait_ready():
