@@ -1,4 +1,5 @@
 """Adds config flow for Nuki."""
+
 import random
 from typing import Any
 import re
@@ -100,7 +101,8 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     ): str,
                     vol.Optional(
                         CONF_PIN,
-                    ): str,
+                        default=None,
+                    ): int,
                     vol.Required(CONF_CLIENT_TYPE, default="Bridge"): SelectSelector(
                         SelectSelectorConfig(
                             options=["Bridge", "App"],
@@ -157,7 +159,7 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
         await device.connect()
         try:
-            ret = await device.pair()
+            ret = await device.pair(self._data[CONF_PIN])
         except NukiErrorException as ex:
             LOGGER.error(ex)
             if ex.error_code == NukiConst.ErrorCode.P_ERROR_NOT_PAIRING:

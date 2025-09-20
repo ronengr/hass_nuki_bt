@@ -3,6 +3,7 @@
 For more details about this integration, please refer to
 https://github.com/ludeeus/hass_nuki_bt
 """
+
 from __future__ import annotations
 import logging
 from asyncio import CancelledError, TimeoutError
@@ -37,6 +38,7 @@ PLATFORMS: list[Platform] = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
