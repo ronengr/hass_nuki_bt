@@ -125,7 +125,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
                 security_pin=self._security_pin, count=1
             )
             if logs:
-                if logs[0].type == NukiConst.LogEntryType.LOCK_ACTION:
+                if logs[0].type in [NukiConst.LogEntryType.LOCK_ACTION, NukiConst.LogEntryType.KEYPAD_ACTION]:
                     # todo: handle other log types
                     self.last_nuki_log_entry = logs[0]
                 elif logs[0].index > self.last_nuki_log_entry["index"]:
@@ -136,7 +136,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
                         start_index=logs[0].index,
                     )
                     for log in logs:
-                        if log.type == NukiConst.LogEntryType.LOCK_ACTION:
+                        if log.type in [NukiConst.LogEntryType.LOCK_ACTION, NukiConst.LogEntryType.KEYPAD_ACTION]:
                             self.last_nuki_log_entry = log
                             break
 
