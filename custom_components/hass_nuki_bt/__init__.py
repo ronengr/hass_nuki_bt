@@ -21,6 +21,7 @@ from pyNukiBT import NukiDevice, NukiConst
 from .const import (
     CONF_APP_ID,
     CONF_AUTH_ID,
+    CONF_BT_PROXY,
     CONF_DEVICE_ADDRESS,
     CONF_DEVICE_PUBLIC_KEY,
     CONF_PRIVATE_KEY,
@@ -28,6 +29,7 @@ from .const import (
     CONF_CLIENT_TYPE,
     DOMAIN,
 )
+from .config_flow import async_ble_device_from_address_and_proxy
 from .coordinator import NukiDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [
@@ -45,15 +47,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
     hass.data.setdefault(DOMAIN, {})
     address: str = entry.data[CONF_DEVICE_ADDRESS]
+    proxy_source: str | None = entry.data.get(CONF_BT_PROXY)
 
     if not bluetooth.async_address_present(hass, address, connectable=True):
         raise ConfigEntryNotReady(f"Could not find Nuki with address {address}")
 
-    ble_device = bluetooth.async_ble_device_from_address(
-        hass, address, connectable=True
-    )
+    ble_device = async_ble_device_from_address_and_proxy(hass, address, proxy_source)
     if not ble_device:
-        raise ConfigEntryNotReady(f"Could not find Nuki with address {address}")
+        raise ConfigEntryNotReady(f"Could not find Nuki with address {address} via proxy {proxy_source}")
 
     if entry.data.get(CONF_CLIENT_TYPE) == "App":
         client_type = NukiConst.NukiClientType.APP
@@ -70,8 +71,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         client_type=client_type,
         name="HomeAssistant",
         ble_device=ble_device,
-        get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(
-            hass, addr, connectable=True
+        get_ble_device=lambda addr: async_ble_device_from_address_and_proxy(
+            hass, addr, proxy_source
         ),
     )
     try:
@@ -88,6 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         base_unique_id=entry.unique_id,
         device_name=entry.data.get(CONF_NAME),
         connectable=True,
+        proxy_source=proxy_source,
         security_pin=None if entry.data.get(CONF_PIN) is None else int(entry.data[CONF_PIN]),
     )
 

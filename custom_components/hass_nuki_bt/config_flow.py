@@ -22,6 +22,7 @@ from pyNukiBT import NukiConst, NukiDevice, NukiErrorException
 from .const import (
     CONF_APP_ID,
     CONF_AUTH_ID,
+    CONF_BT_PROXY,
     CONF_DEVICE_ADDRESS,
     CONF_DEVICE_PUBLIC_KEY,
     CONF_PRIVATE_KEY,
@@ -53,6 +54,7 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
         self._data[CONF_DEVICE_ADDRESS] = discovery_info.address.upper()
         self._data[CONF_NAME] = discovery_info.name
+        self._data[CONF_BT_PROXY] = discovery_info.source
         self.context["title_placeholders"] = {
             "name": self._data[CONF_NAME],
             "address": self._data[CONF_DEVICE_ADDRESS],
@@ -139,8 +141,9 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             client_type = NukiConst.NukiClientType.APP
         else:
             client_type = NukiConst.NukiClientType.BRIDGE
-        ble_device = bluetooth.async_ble_device_from_address(
-            self.hass, self._data[CONF_DEVICE_ADDRESS], connectable=True
+        proxy_source = self._data.get(CONF_BT_PROXY)
+        ble_device = async_ble_device_from_address_and_proxy(
+            self.hass, self._data[CONF_DEVICE_ADDRESS], proxy_source
         )
 
         device = NukiDevice(
@@ -153,8 +156,8 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             name="HomeAssistant",
             client_type=client_type,
             ble_device=ble_device,
-            get_ble_device=lambda addr: bluetooth.async_ble_device_from_address(
-                self.hass, addr, connectable=True
+            get_ble_device=lambda addr: async_ble_device_from_address_and_proxy(
+                self.hass, addr, proxy_source
             ),
         )
         await device.connect()
@@ -230,6 +233,22 @@ class NukiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=_errors,
         )
+
+
+def async_ble_device_from_address_and_proxy(hass, address: str, proxy_source: str | None):
+    """Return a BLE device for the given address, preferring a specific proxy source.
+
+    When proxy_source is set, only service infos from that scanner/proxy are
+    considered. This prevents HA from silently switching to a different BT proxy
+    after the initial pairing, which would cause the Nuki lock to reject connections
+    because the cryptographic pairing is tied to the proxy that performed it.
+    """
+    if proxy_source is None:
+        return bluetooth.async_ble_device_from_address(hass, address, connectable=True)
+    for service_info in bluetooth.async_discovered_service_info(hass, connectable=True):
+        if service_info.address.upper() == address.upper() and service_info.source == proxy_source:
+            return service_info.device
+    return None
 
 
 def format_unique_id(address: str) -> str:

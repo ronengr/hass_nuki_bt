@@ -37,6 +37,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         base_unique_id: str,
         device_name: str,
         connectable: bool,
+        proxy_source: str | None = None,
         security_pin: int = None,
     ) -> None:
         """Initialize global nuki data updater."""
@@ -55,6 +56,7 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         self.base_unique_id = base_unique_id
         self.model = None
         self.last_nuki_log_entry = {"index" : 0}
+        self._proxy_source = proxy_source
         self._security_pin = security_pin
         self._unsubscribe_nuki_callbacks = None
 
@@ -99,6 +101,13 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         change: bluetooth.BluetoothChange,
     ) -> None:
         """Handle a Bluetooth event."""
+        if self._proxy_source is not None and service_info.source != self._proxy_source:
+            _LOGGER.debug(
+                "Ignoring BT event from proxy %s (bound to %s)",
+                service_info.source,
+                self._proxy_source,
+            )
+            return
         self.ble_device = service_info.device
         self.device.parse_advertisement_data(
             service_info.device, service_info.advertisement
