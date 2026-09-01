@@ -19,6 +19,16 @@ from .coordinator import NukiDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
+def _door_open(slf) -> bool:
+    """Return whether the Nuki door sensor reports the door as open."""
+    door_state = (
+        slf.device.keyturner_state.get("door_sensor_state")
+        if slf.device.keyturner_state
+        else None
+    )
+    return door_state == NukiConst.DoorsensorState.DOOR_OPENED
+
+
 @dataclass
 class NukiBinarySensorEntityDescription(BinarySensorEntityDescription):
     """A class that describes nuki sensor entities."""
@@ -43,7 +53,14 @@ SENSOR_TYPES_COMMON: list[NukiBinarySensorEntityDescription] = [
         info_function=lambda slf: slf.device.is_battery_charging,
     ),
 ]
-SENSOR_TYPES_OPENER: list[NukiBinarySensorEntityDescription] = SENSOR_TYPES_COMMON
+SENSOR_TYPES_OPENER: list[NukiBinarySensorEntityDescription] = SENSOR_TYPES_COMMON + [
+    NukiBinarySensorEntityDescription(
+        key="door_open",
+        name="Door open",
+        device_class=BinarySensorDeviceClass.DOOR,
+        info_function=_door_open,
+    ),
+]
 SENSOR_TYPES_LOCK: list[NukiBinarySensorEntityDescription] = SENSOR_TYPES_COMMON + [
     NukiBinarySensorEntityDescription(
         key="accessory_battery_state",
@@ -51,6 +68,12 @@ SENSOR_TYPES_LOCK: list[NukiBinarySensorEntityDescription] = SENSOR_TYPES_COMMON
         device_class=BinarySensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
         info_function=lambda slf: slf.device.keyturner_state[slf.sensor] & 0x2,
+    ),
+    NukiBinarySensorEntityDescription(
+        key="door_open",
+        name="Door open",
+        device_class=BinarySensorDeviceClass.DOOR,
+        info_function=_door_open,
     ),
     NukiBinarySensorEntityDescription(
         key="nightmode_active",
