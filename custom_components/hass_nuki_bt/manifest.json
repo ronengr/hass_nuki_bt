@@ -4,6 +4,10 @@
   "bluetooth": [
     {
       "local_name": "Nuki_*"
+    },
+    {
+      "manufacturer_id": 76,
+      "manufacturer_data_start": [2, 21, 169, 46, 226, 0, 85, 1, 17, 228, 145, 108, 8, 0, 32, 12, 154, 102]
     }
   ],
   "codeowners": [
