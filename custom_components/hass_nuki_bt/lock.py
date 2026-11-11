@@ -61,8 +61,8 @@ class NukiLock(NukiEntity, LockEntity):
         """Update the entity attributes."""
         status = self.device.keyturner_state.lock_state
         self._attr_is_jammed = status is NukiLockConst.LockState.MOTOR_BLOCKED
-        self._attr_is_open = status is NukiOpenerConst.LockState.OPEN
-        self._attr_is_opening = status is  NukiOpenerConst.LockState.OPENING
+        self._attr_is_open = status is NukiLockConst.LockState.UNLATCHED
+        self._attr_is_opening = status is NukiLockConst.LockState.UNLATCHING
         self._attr_is_locked = status is NukiLockConst.LockState.LOCKED
         self._attr_is_locking = status is NukiLockConst.LockState.LOCKING
         self._attr_is_unlocking = status is NukiLockConst.LockState.UNLOCKING
