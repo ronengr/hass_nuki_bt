@@ -31,7 +31,7 @@ BUTTON_TYPES_COMMON: list[NukiButtonEntityDescription] = [
         name="Query lock state",
         icon="mdi:lock-question",
         device_class=ButtonDeviceClass.UPDATE,
-        action_function=lambda slf: slf.coordinator._async_update(),
+        action_function=lambda slf: slf.coordinator.async_query_state(),
     ),
 ]
 BUTTON_TYPES_OPENER: list[NukiButtonEntityDescription] = BUTTON_TYPES_COMMON + [
