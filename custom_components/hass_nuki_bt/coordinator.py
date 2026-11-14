@@ -92,6 +92,11 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
         await self.device.update_state()
         await self.async_get_last_action_log_entry()
 
+    async def async_query_state(self) -> None:
+        """Read and publish state when manually requested by the query button."""
+        await self._async_update()
+        self.async_update_listeners()
+
     @callback
     def _async_handle_bluetooth_event(
         self,
