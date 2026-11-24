@@ -35,6 +35,7 @@ PLATFORMS: list[Platform] = [
     Platform.LOCK,
     Platform.SENSOR,
     Platform.BUTTON,
+    Platform.EVENT,
 ]
 
 _LOGGER = logging.getLogger(__name__)
