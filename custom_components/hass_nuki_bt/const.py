@@ -18,3 +18,8 @@ CONF_PUBLIC_KEY = "public_key"
 CONF_DEVICE_PUBLIC_KEY = "device_public_key"
 CONF_APP_ID = "app_id"
 CONF_CLIENT_TYPE = "client_type"
+
+# Opener doorbell ring detection
+RING_BUS_EVENT = f"{DOMAIN}_ring"
+RING_EVENT_RING = "ring"  # Ring to Open or Continuous Mode was active
+RING_EVENT_RING_LOCKED = "ringlocked"  # nobody/nothing opened the door
