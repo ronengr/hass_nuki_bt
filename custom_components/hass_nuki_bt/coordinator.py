@@ -215,7 +215,15 @@ class NukiDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
                 count=min(10, new_count),
                 start_index=newest_index,
             )
-        new_logs = [log for log in logs if int(log.index) > self._last_seen_log_index]
+        # Keep each log index only once: the BLE notifications can arrive more than once,
+        # which would otherwise report the same ring several times.
+        new_logs = []
+        seen_indexes = set()
+        for log in logs:
+            index = int(log.index)
+            if index > self._last_seen_log_index and index not in seen_indexes:
+                seen_indexes.add(index)
+                new_logs.append(log)
         self._last_seen_log_index = newest_index
 
         for log in new_logs:
